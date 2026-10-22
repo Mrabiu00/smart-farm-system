@@ -884,7 +884,7 @@ def api_simulate_suitability(request):
             return JsonResponse({'status': 'error', 'message': str(e)})
 
 def AI_image_main(request):
-    return render(request, 'climate/AI-Prediction/ai-image.html')
+    return render(request, 'climate/AI-Prediction/AI-image.html')
 
 def ai_vision(request):
     return render(request, 'climate/AI-Prediction/ai-vision.html')
