@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | ROI Planner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --danger: #e74c3c; --warning: #f1c40f; --finance: #f39c12;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 24px; overflow-x: hidden; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 950px) { .layout-grid { grid-template-columns: 1fr 1.2fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); height: fit-content; }
+
+        /* Form Inputs */
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .form-group label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+        .input-wrapper { position: relative; display: flex; align-items: center; }
+        .input-wrapper i { position: absolute; left: 15px; color: var(--muted); font-size: 13px; }
+        .form-group input { 
+            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); 
+            padding: 15px 15px 15px 40px; border-radius: 14px; color: white; outline: none; transition: 0.3s; box-sizing: border-box; font-family: inherit;
+        }
+        .form-group input:focus { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); }
+
+        .btn-calc { 
+            width: 100%; background: linear-gradient(90deg, var(--primary), #5a44ff); color: white; border: none; 
+            padding: 18px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.3s; font-size: 14px;
+        }
+        .btn-calc:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(123, 97, 255, 0.25); }
+
+        /* ROI Output UI */
+        .roi-hero { text-align: center; padding: 35px 20px; background: rgba(46, 204, 113, 0.05); border: 1px dashed var(--accent); border-radius: 24px; margin-bottom: 25px; }
+        .roi-val { font-size: 64px; font-weight: 800; color: var(--accent); line-height: 1; margin: 10px 0; }
+        .roi-label { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; }
+
+        .projection-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .proj-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+        .proj-label { font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 5px; }
+        .proj-val { font-size: 18px; font-weight: 700; }
+
+        .chart-container { height: 220px; width: 100%; position: relative; }
+    </style>
+</head>
+<body>
+
+
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/finance/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Finance Hub</a>
+            <h1 style="margin:0; font-size: 28px; font-weight: 600;">Budget & ROI Planner</h1>
+        </div>
+        <div style="text-align: right;">
+            <div id="calc-status" style="font-size: 12px; color: var(--primary);"><i class="fa-solid fa-calculator"></i> Logic Engine Ready</div>
+            <div style="font-size: 14px; color: var(--muted); margin-top: 5px;">Pre-Planting Simulation</div>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-file-invoice" style="color:var(--primary); margin-right: 10px;"></i> Estimated Expenses</h3>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 25px;">Input your projected costs and expected yields to simulate profitability.</p>
+            
+            <div class="input-grid">
+                <div class="form-group">
+                    <label>Seeds & Seedlings</label>
+                    <div class="input-wrapper"><i class="fa-solid fa-naira-sign"></i><input type="number" id="in-cost-seeds" placeholder="0.00"></div>
+                </div>
+                <div class="form-group">
+                    <label>Fertilizer & Chemicals</label>
+                    <div class="input-wrapper"><i class="fa-solid fa-naira-sign"></i><input type="number" id="in-cost-fert" placeholder="0.00"></div>
+                </div>
+                <div class="form-group">
+                    <label>Labor Costs</label>
+                    <div class="input-wrapper"><i class="fa-solid fa-naira-sign"></i><input type="number" id="in-cost-labor" placeholder="0.00"></div>
+                </div>
+                <div class="form-group">
+                    <label>Equipment Rental</label>
+                    <div class="input-wrapper"><i class="fa-solid fa-naira-sign"></i><input type="number" id="in-cost-equip" placeholder="0.00"></div>
+                </div>
+            </div>
+
+            <h3 style="margin: 30px 0 15px; font-weight: 600; font-size: 16px;"><i class="fa-solid fa-seedling" style="color:var(--accent); margin-right: 10px;"></i> Harvest Projection</h3>
+            
+            <div class="input-grid">
+                <div class="form-group">
+                    <label>Expected Yield (MT)</label>
+                    <div class="input-wrapper"><i class="fa-solid fa-scale-balanced"></i><input type="number" id="in-yield" placeholder="e.g. 50"></div>
+                </div>
+                <div class="form-group">
+                    <label>Est. Selling Price (per MT)</label>
+                    <div class="input-wrapper"><i class="fa-solid fa-naira-sign"></i><input type="number" id="in-price" placeholder="0.00"></div>
+                </div>
+            </div>
+
+            <button class="btn-calc" id="btn-run-roi">Calculate Projected ROI</button>
+        </div>
+
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-magnifying-glass-chart" style="color:var(--accent); margin-right: 10px;"></i> Profitability Analysis</h3>
+            
+            <div class="roi-hero">
+                <div class="roi-label">Projected Return on Investment</div>
+                <div class="roi-val" id="out-roi-perc">--%</div>
+                <div style="font-size: 14px; font-weight: 500;" id="out-roi-status">Awaiting Input Parameters</div>
+            </div>
+
+            <div class="projection-grid">
+                <div class="proj-card">
+                    <div class="proj-label">Total Estimated Cost</div>
+                    <div class="proj-val" style="color: var(--danger);" id="out-total-cost">₦--</div>
+                </div>
+                <div class="proj-card">
+                    <div class="proj-label">Projected Gross Revenue</div>
+                    <div class="proj-val" style="color: var(--accent);" id="out-gross-rev">₦--</div>
+                </div>
+                <div class="proj-card" style="grid-column: span 2; border-color: var(--primary); background: rgba(123, 97, 255, 0.05);">
+                    <div class="proj-label" style="color: var(--primary);">Estimated Net Profit</div>
+                    <div class="proj-val" id="out-net-profit">₦--</div>
+                </div>
+            </div>
+
+            <h4 style="font-size: 13px; color: var(--muted); margin-bottom: 15px; text-transform: uppercase;">Expense Breakdown</h4>
+            <div class="chart-container">
+                <canvas id="expenseChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Initialize the Expense Doughnut Chart
+    const ctx = document.getElementById('expenseChart').getContext('2d');
+    let expenseChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Seeds', 'Fertilizer', 'Labor', 'Equipment'],
+            datasets: [{
+                data: [1, 1, 1, 1], // Default placeholder data
+                backgroundColor: ['#7b61ff', '#2ecc71', '#f1c40f', '#3498db'],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '75%',
+            plugins: {
+                legend: { position: 'right', labels: { color: '#8b8b9a', font: {size: 11}, usePointStyle: true, padding: 20 } }
+            }
+        }
+    });
+
+    // 2. Attach the click event to your specific button ID
+    document.getElementById('btn-run-roi').addEventListener('click', () => {
+        
+        const btn = document.getElementById('btn-run-roi');
+        btn.innerText = "Calculating...";
+
+        // 3. Pull values from your input fields
+        const seeds = Number(document.getElementById('in-cost-seeds').value) || 0;
+        const fert = Number(document.getElementById('in-cost-fert').value) || 0;
+        const labor = Number(document.getElementById('in-cost-labor').value) || 0;
+        const equip = Number(document.getElementById('in-cost-equip').value) || 0;
+        
+        const yieldAmt = Number(document.getElementById('in-yield').value) || 0;
+        const price = Number(document.getElementById('in-price').value) || 0;
+
+        // 4. Calculate the financial metrics
+        const totalCost = seeds + fert + labor + equip;
+        const grossRev = yieldAmt * price;
+        const netProfit = grossRev - totalCost;
+        
+        let roiPerc = 0;
+        if (totalCost > 0) {
+            roiPerc = ((netProfit / totalCost) * 100).toFixed(1);
+        }
+
+        // 5. Inject the math back into your dashboard outputs
+        document.getElementById('out-total-cost').innerText = `₦${totalCost.toLocaleString()}`;
+        document.getElementById('out-gross-rev').innerText = `₦${grossRev.toLocaleString()}`;
+        
+        const profitEl = document.getElementById('out-net-profit');
+        profitEl.innerText = `₦${netProfit.toLocaleString()}`;
+        profitEl.style.color = netProfit >= 0 ? 'var(--accent)' : 'var(--danger)';
+
+        const roiEl = document.getElementById('out-roi-perc');
+        roiEl.innerText = `${roiPerc}%`;
+        roiEl.style.color = roiPerc >= 0 ? 'var(--accent)' : 'var(--danger)';
+
+        // 6. Dynamic AI-style status text
+        const statusEl = document.getElementById('out-roi-status');
+        if (roiPerc >= 50) {
+            statusEl.innerText = "Highly Profitable";
+            statusEl.style.color = "var(--accent)";
+        } else if (roiPerc >= 15) {
+            statusEl.innerText = "Moderate Return";
+            statusEl.style.color = "var(--warning)";
+        } else if (roiPerc >= 0) {
+            statusEl.innerText = "Low Margin (Caution)";
+            statusEl.style.color = "var(--primary)";
+        } else {
+            statusEl.innerText = "Loss Projected";
+            statusEl.style.color = "var(--danger)";
+        }
+
+        // 7. Push the new cost breakdown into the Chart
+        expenseChart.data.datasets[0].data = [seeds, fert, labor, equip];
+        expenseChart.update();
+
+        // Reset the button text quickly
+        setTimeout(() => { btn.innerText = "Calculate Projected ROI"; }, 300);
+    });
+</script>
+
+</body>
+</html>

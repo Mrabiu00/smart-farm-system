@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Price Forecaster</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --danger: #e74c3c; --warning: #f1c40f; --info: #3498db;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 24px; overflow-x: hidden; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 950px) { .layout-grid { grid-template-columns: 1fr 1.5fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); height: fit-content; }
+
+        /* Form Styling */
+        .form-group { margin-bottom: 22px; }
+        .form-group label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1.2px; }
+        .form-group select { 
+            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); 
+            padding: 15px; border-radius: 14px; color: white; outline: none; transition: 0.3s; box-sizing: border-box; font-family: inherit;
+        }
+        .form-group select:focus { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); }
+
+        .btn-predict { 
+            width: 100%; background: linear-gradient(90deg, var(--primary), #5a44ff); color: white; border: none; 
+            padding: 18px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 10px; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-predict:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(123, 97, 255, 0.25); }
+
+        /* Predictive Output UI */
+        .prediction-hero { display: flex; justify-content: space-between; align-items: center; padding: 30px; background: rgba(123, 97, 255, 0.05); border: 1px solid rgba(123, 97, 255, 0.2); border-radius: 20px; margin-bottom: 25px; }
+        .pred-label { font-size: 12px; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; font-weight: 600; }
+        .pred-price { font-size: 42px; font-weight: 800; margin: 0; line-height: 1; color: var(--text); }
+        .pred-trend { font-size: 14px; font-weight: 600; margin-top: 8px; display: flex; align-items: center; gap: 5px; }
+        
+        .confidence-box { text-align: right; }
+        .conf-val { font-size: 24px; font-weight: 700; color: var(--accent); }
+        .conf-label { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+
+        .ai-banner { background: rgba(52, 152, 219, 0.1); border-left: 4px solid var(--info); padding: 20px; border-radius: 12px; margin-bottom: 25px; }
+        .ai-title { color: var(--info); font-size: 13px; font-weight: 600; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .chart-container { height: 250px; width: 100%; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/finance/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Finance Hub</a>
+            <h1 style="margin:0; font-size: 28px; font-weight: 600;">Price Trend Forecaster</h1>
+        </div>
+        <div style="text-align: right;">
+            <div id="ml-status" style="font-size: 12px; color: var(--primary);"><i class="fa-solid fa-brain"></i> Prediction Engine Ready</div>
+            <div id="last-model-update" style="font-size: 14px; color: var(--muted); margin-top: 5px;">Awaiting Query...</div>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-sliders" style="color:var(--primary); margin-right: 10px;"></i> Forecast Parameters</h3>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 25px;">Select a commodity and time horizon to run the predictive algorithm.</p>
+            
+            <div class="form-group">
+                <label>Target Commodity</label>
+                <select id="in-crop">
+                    <option value="maize">Maize (White)</option>
+                    <option value="rice">Rice (Paddy)</option>
+                    <option value="sorghum">Sorghum</option>
+                    <option value="soybeans">Soybeans</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Forecast Horizon</label>
+                <select id="in-horizon">
+                    <option value="1">1 Month Projection</option>
+                    <option value="3">3 Months Projection</option>
+                    <option value="6">6 Months Projection</option>
+                </select>
+            </div>
+
+            <button class="btn-predict" id="btn-run-forecast"><i class="fa-solid fa-wand-magic-sparkles"></i> Run ML Forecast</button>
+        </div>
+
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-chart-line" style="color:var(--accent); margin-right: 10px;"></i> Predictive Analytics</h3>
+            
+            <div class="prediction-hero">
+                <div>
+                    <div class="pred-label" id="out-crop-name">Target: Syncing...</div>
+                    <div class="pred-price" id="out-pred-price">₦--</div>
+                    <div class="pred-trend" id="out-trend" style="color: var(--muted);">Awaiting ML Output</div>
+                </div>
+                <div class="confidence-box">
+                    <div class="conf-val" id="out-confidence">--%</div>
+                    <div class="conf-label">Model Confidence</div>
+                </div>
+            </div>
+
+            <div class="ai-banner">
+                <div class="ai-title"><i class="fa-solid fa-robot"></i> Strategic Recommendation</div>
+                <p style="margin: 0; font-size: 13px; line-height: 1.6; color: var(--text);" id="out-ai-advice">
+                    Submit forecast parameters to generate a hold/sell recommendation based on projected market peaks.
+                </p>
+            </div>
+
+            <h4 style="font-size: 13px; color: var(--muted); margin-bottom: 10px; text-transform: uppercase;">Historical vs Predicted Trajectory</h4>
+            <div class="chart-container">
+                <canvas id="forecastChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Initialize the Chart
+    const ctx = document.getElementById('forecastChart').getContext('2d');
+    let forecastChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Month -2', 'Month -1', 'Current', 'Month +1 (Est)', 'Month +2 (Est)', 'Month +3 (Est)'],
+            datasets: [
+                {
+                    label: 'Historical Price (NGN)',
+                    data: [0, 0, 0, null, null, null], 
+                    borderColor: '#8b8b9a',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    spanGaps: true,
+                    pointBackgroundColor: '#8b8b9a'
+                },
+                {
+                    label: 'Predicted Price (NGN)',
+                    data: [null, null, 0, 0, 0, 0], 
+                    borderColor: '#7b61ff',
+                    borderWidth: 3,
+                    borderDash: [5, 5], 
+                    tension: 0.4,
+                    spanGaps: true,
+                    pointBackgroundColor: '#7b61ff',
+                    pointRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { ticks: { color: '#8b8b9a', font: {size: 10} }, grid: { display: false } },
+                y: { ticks: { color: '#8b8b9a', font: {size: 10} }, grid: { color: 'rgba(255,255,255,0.05)' } }
+            },
+            plugins: {
+                legend: { labels: { color: '#8b8b9a', font: {size: 11} } },
+                tooltip: { mode: 'index', intersect: false }
+            }
+        }
+    });
+
+    // 2. Button Click Event
+    document.getElementById('btn-run-forecast').addEventListener('click', async () => {
+        const crop = document.getElementById('in-crop').value;
+        const horizon = document.getElementById('in-horizon').value;
+        const btn = document.getElementById('btn-run-forecast');
+        
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing...';
+        
+        try {
+            const res = await fetch('/api/forecast-data/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ crop: crop, horizon: horizon })
+            });
+            const result = await res.json();
+            
+            // Validate: check if we actually have data before updating
+            if(result && result.data) {
+                const d = result.data;
+                document.getElementById('out-crop-name').innerText = `Target: ${d.target}`;
+                document.getElementById('out-pred-price').innerText = d.pred_price;
+                document.getElementById('out-trend').innerHTML = d.trend.includes('-') ? 
+                    `<i class="fa-solid fa-arrow-trend-down" style="color:var(--danger)"></i> ${d.trend}` : 
+                    `<i class="fa-solid fa-arrow-trend-up" style="color:var(--accent)"></i> ${d.trend}`;
+                document.getElementById('out-confidence').innerText = d.confidence;
+                document.getElementById('out-ai-advice').innerText = d.advice;
+                
+                // Final sanitization for Chart.js
+                forecastChart.data.datasets[0].data = d.historical_data.map(v => v === 0 ? null : v);
+                forecastChart.data.datasets[1].data = d.predicted_data.map(v => v === 0 ? null : v);
+                forecastChart.update();
+            }
+        } catch(e) {
+            console.error("Critical Error:", e);
+        } finally {
+            btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Run ML Forecast';
+            document.getElementById('last-model-update').innerText = `Last Run: ${new Date().toLocaleTimeString()}`;
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => document.getElementById('btn-run-forecast').click());
+</script>
+
+</body>
+</html>

@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SmartFarm | Pest Intelligence</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        --bg: #07070a;
+        --card: #12121a;
+        --primary: #7b61ff;
+        --accent: #2ecc71;
+        --danger: #e74c3c;
+        --warning: #f1c40f;
+        --text: #ffffff;
+        --muted: #8b8b9a;
+        --border: rgba(255, 255, 255, 0.06);
+      }
+      body {
+        margin: 0;
+        font-family: "Poppins", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        padding: 40px 24px;
+        overflow-x: hidden;
+      }
+      .container {
+        max-width: 1050px;
+        margin: 0 auto;
+      }
+
+      .header-box {
+        margin-bottom: 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+      }
+      .back-link {
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+        transition: 0.3s;
+      }
+      .back-link:hover {
+        color: var(--primary);
+      }
+
+      .layout-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+      @media (min-width: 950px) {
+        .layout-grid {
+          grid-template-columns: 1fr 1.3fr;
+        }
+      }
+
+      .glass-panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        padding: 35px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+        height: fit-content;
+      }
+
+      /* Threat Radar Box */
+      .threat-box {
+        text-align: center;
+        padding: 30px 20px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        margin-bottom: 25px;
+      }
+      .threat-level {
+        font-size: 48px;
+        font-weight: 800;
+        text-transform: uppercase;
+        margin: 10px 0;
+        letter-spacing: 2px;
+      }
+
+      /* Risk Factors */
+      .risk-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+      }
+      .risk-item {
+        background: rgba(255, 255, 255, 0.02);
+        padding: 15px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+      .risk-icon {
+        width: 35px;
+        height: 35px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+      }
+
+      /* Action Plan List */
+      .action-list {
+        margin-top: 20px;
+      }
+      .action-item {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 25px;
+        padding-bottom: 25px;
+        border-bottom: 1px solid var(--border);
+        position: relative;
+      }
+      .action-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+      }
+      .step-num {
+        width: 30px;
+        height: 30px;
+        background: rgba(123, 97, 255, 0.1);
+        color: var(--primary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+      .action-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: var(--text);
+      }
+      .action-desc {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .chart-container {
+        height: 180px;
+        width: 100%;
+        margin-top: 25px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header-box">
+        <div>
+          <a href="/automation/smart-task/" class="back-link"
+            ><i class="fa-solid fa-arrow-left"></i> Back to Sector 2</a
+          >
+          <h1 style="margin: 0; font-size: 28px; font-weight: 600">
+            Pest Prevention Alerts
+          </h1>
+        </div>
+        <div style="text-align: right">
+          <div id="model-status" style="font-size: 12px; color: var(--accent)">
+            <i class="fa-solid fa-shield-halved"></i> ML Scan Active
+          </div>
+          <div
+            id="farm-sector-display"
+            style="font-size: 14px; color: var(--muted); margin-top: 5px"
+          >
+            Loading Sector...
+          </div>
+        </div>
+      </div>
+
+      <div class="layout-grid">
+        <div class="glass-panel">
+          <h3 style="margin-top: 0; font-weight: 600">
+            <i
+              class="fa-solid fa-radar"
+              style="color: var(--danger); margin-right: 10px"
+            ></i>
+            Threat Radar
+          </h3>
+          <p style="color: var(--muted); font-size: 13px; margin-bottom: 25px">
+            Analyzing micro-climate data for outbreak probability.
+          </p>
+
+          <div class="threat-box">
+            <div
+              style="
+                font-size: 11px;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: 1px;
+              "
+            >
+              Current Risk Level
+            </div>
+            <div
+              class="threat-level"
+              id="threat-status-val"
+              style="color: var(--danger)"
+            >
+              --
+            </div>
+            <div
+              style="font-size: 14px; font-weight: 500"
+              id="identified-pest-val"
+            >
+              Analyzing primary vector...
+            </div>
+          </div>
+
+          <h4
+            style="
+              font-size: 13px;
+              color: var(--muted);
+              margin-bottom: 15px;
+              text-transform: uppercase;
+            "
+          >
+            Primary Risk Factors
+          </h4>
+          <div class="risk-grid">
+            <div class="risk-item">
+              <div
+                class="risk-icon"
+                style="background: rgba(52, 152, 219, 0.1); color: #3498db"
+              >
+                <i class="fa-solid fa-droplet"></i>
+              </div>
+              <div>
+                <div
+                  style="
+                    font-size: 10px;
+                    color: var(--muted);
+                    text-transform: uppercase;
+                  "
+                >
+                  Humidity
+                </div>
+                <div style="font-weight: 600" id="risk-humid-val">--%</div>
+              </div>
+            </div>
+            <div class="risk-item">
+              <div
+                class="risk-icon"
+                style="background: rgba(241, 196, 15, 0.1); color: #f1c40f"
+              >
+                <i class="fa-solid fa-temperature-high"></i>
+              </div>
+              <div>
+                <div
+                  style="
+                    font-size: 10px;
+                    color: var(--muted);
+                    text-transform: uppercase;
+                  "
+                >
+                  Temp
+                </div>
+                <div style="font-weight: 600" id="risk-temp-val">--°C</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-container">
+            <canvas id="pestTrendChart"></canvas>
+          </div>
+        </div>
+
+        <div class="glass-panel">
+          <h3 style="margin-top: 0; font-weight: 600">
+            <i
+              class="fa-solid fa-clipboard-check"
+              style="color: var(--primary); margin-right: 10px"
+            ></i>
+            AI Defense Plan
+          </h3>
+          <p style="color: var(--muted); font-size: 13px; margin-bottom: 30px">
+            Actionable, automated recommendations to neutralize the predicted
+            threat.
+          </p>
+
+          <div class="action-list" id="mitigation-container">
+            <div class="action-item">
+              <div class="step-num">1</div>
+              <div>
+                <div class="action-title" id="action-title-1">
+                  Fetching Protocol...
+                </div>
+                <div class="action-desc" id="action-desc-1">
+                  Awaiting AI logic processing based on current environmental
+                  variables.
+                </div>
+              </div>
+            </div>
+
+            <div class="action-item">
+              <div class="step-num">2</div>
+              <div>
+                <div class="action-title" id="action-title-2">
+                  Fetching Protocol...
+                </div>
+                <div class="action-desc" id="action-desc-2">
+                  Awaiting AI logic processing based on current environmental
+                  variables.
+                </div>
+              </div>
+            </div>
+
+            <div class="action-item">
+              <div class="step-num">3</div>
+              <div>
+                <div class="action-title" id="action-title-3">
+                  Schedule Custom Task
+                </div>
+                <div class="action-desc">
+                  Push these recommendations to your farm schedule queue for
+                  immediate execution.
+                </div>
+                <button style="margin-top: 15px; padding: 10px 20px; background: rgba(123, 97, 255, 0.1); color: var(--primary); border: 1px solid var(--primary); border-radius: 10px; font-family: inherit; font-weight: 600; cursor: pointer; transition: 0.3s;" onmouseover="this.style.background='var(--primary)'; this.style.color='#fff';" onmouseout="this.style.background='rgba(123, 97, 255, 0.1)'; this.style.color='var(--primary)';">
+                            <i class="fa-solid fa-calendar-plus"></i> Auto-Schedule Tasks
+                </button> 
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const ctx = document.getElementById("pestTrendChart").getContext("2d");
+      let pestChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5"],
+          datasets: [
+            {
+              label: "Outbreak Probability (%)",
+              data: [0, 0, 0, 0, 0],
+              borderColor: "#e74c3c",
+              backgroundColor: "rgba(231, 76, 60, 0.1)",
+              fill: true,
+              tension: 0.4,
+            },
+          ],
+        },
+        options: { responsive: true, maintainAspectRatio: false },
+      });
+
+      async function loadPestData() {
+        try {
+          const response = await fetch("/api/get-pest-risk/");
+          const result = await response.json();
+
+          if (result.status === "success") {
+            const d = result.data;
+            // Update UI elements
+            document.getElementById("farm-sector-display").innerText =
+              "Sector: Katsina North";
+            document.getElementById("identified-pest-val").innerText =
+              d.pest_name;
+            document.getElementById("threat-status-val").innerText =
+              d.threat_level;
+            document.getElementById("risk-temp-val").innerText = d.temp + "°C";
+            document.getElementById("risk-humid-val").innerText =
+              d.humidity + "%";
+
+            // Update Action Plan
+            document.getElementById("action-title-1").innerText =
+              "Immediate Action";
+            document.getElementById("action-desc-1").innerText = d.action_1;
+            document.getElementById("action-title-2").innerText =
+              "Preventative Measure";
+            document.getElementById("action-desc-2").innerText = d.action_2;
+
+            document.getElementById('btn-schedule-pest').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-schedule-pest');
+    
+    // Get the dynamic AI recommendations from the text fields we just populated
+    const recommendation = document.getElementById('action-desc-1').innerText;
+    
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Scheduling...';
+    btn.style.pointerEvents = 'none';
+
+    try {
+        // Send this to a new endpoint in views.py
+        const response = await fetch('/api/schedule-pest-task/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ task: recommendation })
+        });
+        
+        if (response.ok) {
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Scheduled!';
+            btn.style.background = 'var(--accent)';
+        }
+    } catch (e) {
+        btn.innerHTML = 'Error Scheduling';
+        console.error(e);
+    }
+});
+
+            // Update Chart
+            pestChart.data.datasets[0].data = d.risk_probability;
+            pestChart.update();
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      loadPestData();
+    </script>
+
+    <!-- <script>
+    const ctx = document.getElementById('pestTrendChart').getContext('2d');
+    let pestChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5'],
+            datasets: [{
+                label: 'Outbreak Probability (%)',
+                data: [0, 0, 0, 0, 0],
+                borderColor: '#e74c3c',
+                backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                fill: true, tension: 0.4
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    async function loadPestData() {
+        try {
+            const response = await fetch('/api/get-pest-risk/');
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                const d = result.data;
+                // Update UI elements
+                document.getElementById('identified-pest-val').innerText = d.pest_name;
+                document.getElementById('threat-status-val').innerText = d.threat_level;
+                document.getElementById('action-title-1').innerText = "Immediate Action";
+                document.getElementById('action-desc-1').innerText = d.action_1;
+                document.getElementById('action-title-2').innerText = "Preventative Measure";
+                document.getElementById('action-desc-2').innerText = d.action_2;
+                
+                // Update Chart
+                pestChart.data.datasets[0].data = d.risk_probability;
+                pestChart.update();
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    loadPestData();
+</script> -->
+  </body>
+</html>

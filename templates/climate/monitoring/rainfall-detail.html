@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Live Predictive Analytics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #07070a;
+            --card: #12121a;
+            --primary: #7b61ff;
+            --accent: #2ecc71;
+            --text: #ffffff;
+            --muted: #8b8b9a;
+            --border: rgba(255, 255, 255, 0.06);
+            --shadow: 0 20px 50px rgba(0,0,0,0.6);
+            --green-glow: 0 0 30px rgba(46, 204, 113, 0.3);
+        }
+
+        body { 
+            margin: 0; font-family: 'Poppins', sans-serif; 
+            background: radial-gradient(circle at top right, #1a1a2e, var(--bg)); 
+            color: var(--text); min-height: 100vh;
+            display: flex; justify-content: center; align-items: flex-start;
+            padding: 40px 20px;
+        }
+
+        .main-wrapper { width: 100%; max-width: 1100px; animation: fadeIn 0.8s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Top Nav */
+        .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; font-weight: 500; transition: 0.3s; display: flex; align-items: center; gap: 8px;}
+        .back-link:hover { color: var(--primary); }
+
+        /* Main Container Grid */
+        .predict-container { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 950px) { .predict-container { grid-template-columns: 1.1fr 1fr; } }
+
+        /* Card Styles */
+        .glass-card { 
+            background: var(--card); border: 1px solid var(--border); border-radius: 24px; 
+            padding: 35px; box-shadow: var(--shadow); backdrop-filter: blur(10px);
+        }
+
+        /* LIVE SENSOR DISPLAYS (LEFT PANEL) */
+        .sensor-panel { display: flex; flex-direction: column; gap: 20px; margin-top: 30px; }
+        .sensor-display-box { 
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border); 
+            border-radius: 15px; padding: 20px 25px; 
+            display: flex; justify-content: space-between; align-items: center;
+            transition: 0.4s;
+        }
+        /* State when data arrives */
+        .sensor-display-box.active { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); }
+        
+        .sensor-meta { flex: 1; }
+        .sensor-meta label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .sensor-meta h4 { margin: 0; font-size: 16px; font-weight: 600; }
+        
+        .sensor-value { font-size: 28px; font-weight: 700; color: var(--muted); transition: 0.4s; }
+        .sensor-display-box.active .sensor-value { color: white; }
+
+        /* Execute Button */
+        .execute-box { margin-top: 35px; text-align: center; }
+        .action-btn { 
+            width: 100%; padding: 18px; background: linear-gradient(90deg, var(--primary), #5a44ff);
+            color: white; border: none; border-radius: 15px; 
+            font-weight: 700; cursor: pointer; transition: 0.3s;
+            font-size: 14px; letter-spacing: 1px; text-transform: uppercase;
+        }
+        .action-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        .action-btn:disabled { background: #333; cursor: not-allowed; transform: none; filter: none;}
+
+        /* MODEL CONFIDENCE PANEL (RIGHT PANEL - MATCHING image_3.png) */
+        .confidence-panel { text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 35px; margin-bottom: 35px; }
+        .model-label { color: var(--muted); letter-spacing: 2px; font-size: 11px; font-weight: 500; }
+        .percentage-main { font-size: 72px; font-weight: 800; color: var(--accent); margin: 15px 0; text-shadow: var(--green-glow); }
+        .status-desc-text { font-size: 14px; color: var(--muted); font-weight: 500; }
+
+        /* Prediction Logic (Dashed Box) */
+        .logic-dashed-box { 
+            border: 1px dashed rgba(123, 97, 255, 0.5); border-radius: 20px; 
+            padding: 25px; background: rgba(123, 97, 255, 0.03); 
+            display: flex; gap: 15px; align-items: flex-start;
+            margin-bottom: 30px;
+        }
+        .logic-icon { font-size: 16px; color: var(--primary); margin-top: 3px; }
+        .logic-body h4 { margin: 0 0 8px; font-size: 14px; color: var(--primary); font-weight: 600; }
+        .logic-body p { margin: 0; font-size: 12px; line-height: 1.7; color: var(--muted); }
+
+        /* Footer Meta (Location & Time) */
+        .meta-footer { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); padding-top: 25px;}
+        .meta-group label { color: var(--muted); font-weight: 400; margin-bottom: 4px; display: block;}
+        .meta-group b { color: white; font-weight: 600; }
+
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="top-nav">
+        <a href="/monitoring/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Monitoring Suite</a>
+        <div id="user-context" style="font-size: 13px; color: var(--muted);"><i class="fa-solid fa-user-check"></i> <span id="user-id-sync">{{ request.user.username|title|default:'Admin Profile' }}</span></div>
+    </div>
+
+    <div class="predict-container">
+        
+        <!-- LEFT PANEL: Dynamic Sensor Displays (Replaced Inputs) -->
+        <div class="glass-card">
+            <h2 style="margin: 0 0 10px; font-size: 22px;">Real-Time Weather Sync</h2>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 0px;">Authenticate with live satellite network to populate current metrics.</p>
+            
+            <div class="sensor-panel">
+                
+                <!-- Atmosphere Pressure -->
+                <div class="sensor-display-box" id="box-pressure">
+                    <div class="sensor-meta">
+                        <label>Atmospheric Pressure</label>
+                        <h4>Surface Level</h4>
+                    </div>
+                    <div class="sensor-value"><span id="out-pressure">--.-</span> <small style="font-size:14px; font-weight:400; color:var(--muted);">hPa</small></div>
+                </div>
+
+                <!-- Ambient Temp -->
+                <div class="sensor-display-box" id="box-temp">
+                    <div class="sensor-meta">
+                        <label>Ambient Air Temp</label>
+                        <h4>Current Reading</h4>
+                    </div>
+                    <div class="sensor-value"><span id="out-temp">--.-</span> <small style="font-size:14px; font-weight:400; color:var(--muted);">°C</small></div>
+                </div>
+
+                <!-- Air Humidity (Proxy for local moisture) -->
+                <div class="sensor-display-box" id="box-humidity">
+                    <div class="sensor-meta">
+                        <label>Relative Air Humidity</label>
+                        <h4>Vapor Saturation</h4>
+                    </div>
+                    <div class="sensor-value"><span id="out-humidity">--</span> <small style="font-size:14px; font-weight:400; color:var(--muted);">%</small></div>
+                </div>
+
+            </div>
+            
+            <div class="execute-box">
+                <button class="action-btn" id="trigger-live-api">Execute Live Prediction</button>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL: Result Display (Matching image_3.png State) -->
+        <div class="glass-card">
+            
+            <!-- Model Confidence Section -->
+            <div class="confidence-panel">
+                <div class="model-label">MODEL CONFIDENCE</div>
+                <div class="percentage-main" id="prob-output">--%</div>
+                <div class="status-desc-text" id="status-desc">Awaiting satellite synchronization...</div>
+            </div>
+
+            <!-- Prediction Logic Dashed Box -->
+            <div class="logic-dashed-box">
+                <div class="logic-icon"><i class="fa-solid fa-microchip"></i></div>
+                <div class="logic-body">
+                    <h4>Prediction Logic (Live API)</h4>
+                    <p>
+                        This model is powered by OpenWeatherMap’s advanced satellite forecasting system. It analyzes current high-altitude moisture accumulation and localized pressure systems to calculate immediate precipitation risk. This logic is synchronized with your specific profile location.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Footer Meta (Location & Time) -->
+            <div class="meta-footer">
+                <div class="meta-group">
+                    <label>Synced Location</label>
+                    <!-- LOCATION HARDCODED TO KATSINA PER REQUEST -->
+                    <b>Katsina, Nigeria (Synced)</b>
+                </div>
+                <div class="meta-group" style="text-align: right;">
+                    <label>Last API Sync (Live)</label>
+                    <b id="time-sync-id">--:-- -- WAT</b>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // JS Logic to handle the API call and update the UI elements
+    document.getElementById('trigger-live-api').addEventListener('click', async function() {
+        const btn = this;
+        const originalText = btn.innerText;
+
+        // 1. Enter Loading State
+        btn.innerText = "Synchronizing Satellite Network...";
+        btn.disabled = true;
+
+        // Reset display numbers
+        document.getElementById('prob-output').innerText = "CALC...";
+        document.getElementById('status-desc').innerText = "Fetching real-time atmospheric data from Katsina...";
+        
+        // Deactivate sensor boxes if they were active
+        document.querySelectorAll('.sensor-display-box').forEach(box => box.classList.remove('active'));
+
+        try {
+            // 2. Fetch data from the Django Backend API Endpoint
+            // (The backend calls the real OpenWeatherMap satellite API)
+            const response = await fetch('/api/predict-rain-live/'); 
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                // 3. Update the Left Panel (Live Sensor Display)
+                document.getElementById('out-pressure').innerText = result.live_pressure;
+                document.getElementById('out-temp').innerText = result.live_temp.toFixed(1);
+                document.getElementById('out-humidity').innerText = result.live_humidity;
+                
+                // Add the active 'glow' class to the boxes
+                document.getElementById('box-pressure').classList.add('active');
+                document.getElementById('box-temp').classList.add('active');
+                document.getElementById('box-humidity').classList.add('active');
+
+                // 4. Update the Right Panel (Prediction Matching image_3.png)
+                document.getElementById('prob-output').innerText = result.probability + "%";
+                document.getElementById('status-desc').innerText = result.description;
+                
+                // Location is hardcoded in HTML as Katsina, no update needed.
+                document.getElementById('time-sync-id').innerText = result.live_time;
+
+            } else {
+                console.error("Backend Error:", result.message);
+                document.getElementById('status-desc').innerText = "Live synchronization failed. API limit reached or network error.";
+                document.getElementById('prob-output').innerText = "ERR";
+            }
+
+        } catch (error) {
+            console.error("Network Error:", error);
+            document.getElementById('status-desc').innerText = "Connection lost. Please check server availability.";
+            document.getElementById('prob-output').innerText = "NET";
+        } finally {
+            // 5. Reset Button State
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    });
+</script>
+
+</body>
+</html>

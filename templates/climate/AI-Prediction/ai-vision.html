@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SmartFarm | AI Vision Diagnostics</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #07070a;
+        --card: #12121a;
+        --primary: #7b61ff;
+        --accent: #2ecc71;
+        --danger: #e74c3c;
+        --warning: #f1c40f;
+        --text: #ffffff;
+        --muted: #8b8b9a;
+        --border: rgba(255, 255, 255, 0.06);
+      }
+      body {
+        margin: 0;
+        font-family: "Poppins", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        padding: 40px 24px;
+        overflow-x: hidden;
+      }
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+
+      .header-box {
+        margin-bottom: 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+      }
+      .back-link {
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+        transition: 0.3s;
+      }
+      .back-link:hover {
+        color: var(--primary);
+      }
+
+      .layout-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+      @media (min-width: 950px) {
+        .layout-grid {
+          grid-template-columns: 1fr 1.2fr;
+        }
+      }
+
+      .glass-panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        padding: 35px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+        height: fit-content;
+      }
+
+      /* Upload Area */
+      .upload-zone {
+        border: 2px dashed var(--border);
+        border-radius: 20px;
+        padding: 40px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: 0.3s;
+        background: rgba(0, 0, 0, 0.2);
+        margin-bottom: 25px;
+      }
+      .upload-zone:hover {
+        border-color: var(--primary);
+        background: rgba(123, 97, 255, 0.05);
+      }
+      .upload-icon {
+        font-size: 40px;
+        color: var(--primary);
+        margin-bottom: 15px;
+      }
+      .upload-text {
+        font-size: 14px;
+        color: var(--text);
+        font-weight: 500;
+        margin-bottom: 5px;
+      }
+      .upload-hint {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .btn-analyze {
+        width: 100%;
+        background: linear-gradient(90deg, var(--primary), #5a44ff);
+        color: white;
+        border: none;
+        padding: 18px;
+        border-radius: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+      .btn-analyze:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 25px rgba(123, 97, 255, 0.25);
+      }
+
+      /* Analysis Results */
+      .result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 25px;
+        padding-bottom: 25px;
+        border-bottom: 1px solid var(--border);
+      }
+      .disease-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--danger);
+        margin: 0 0 5px;
+      }
+      .confidence-badge {
+        background: rgba(46, 204, 113, 0.1);
+        color: var(--accent);
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .treatment-box {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 25px;
+      }
+      .treatment-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--primary);
+        margin: 0 0 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .mitigation-list {
+        padding-left: 20px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.8;
+      }
+      .mitigation-list li {
+        margin-bottom: 10px;
+      }
+
+      /* Image Preview Placeholder */
+      .img-preview {
+        width: 100%;
+        height: 200px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 16px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border: 1px solid var(--border);
+      }
+      .img-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header-box">
+        <div>
+          <a href="/ai/image-main/" class="back-link"
+            ><i class="fa-solid fa-arrow-left"></i> Back to AI Hub</a
+          >
+          <h1 style="margin: 0; font-size: 28px; font-weight: 600">
+            Crop Disease Diagnosis
+          </h1>
+        </div>
+        <div style="text-align: right">
+          <div id="ml-status" style="font-size: 12px; color: var(--accent)">
+            <i class="fa-solid fa-server"></i> Vision API Connected
+          </div>
+          <div
+            id="scan-history"
+            style="font-size: 14px; color: var(--muted); margin-top: 5px"
+          >
+            0 Scans Today
+          </div>
+        </div>
+      </div>
+
+      <div class="layout-grid">
+        <div class="glass-panel">
+          <h3 style="margin-top: 0; font-weight: 600">
+            <i
+              class="fa-solid fa-cloud-arrow-up"
+              style="color: var(--primary); margin-right: 10px"
+            ></i>
+            Image Input
+          </h3>
+          <p style="color: var(--muted); font-size: 13px; margin-bottom: 30px">
+            Upload a clear photo of the affected crop leaf for ML analysis.
+          </p>
+
+          <div class="upload-zone" id="drop-zone">
+            <i class="fa-solid fa-camera-viewfinder upload-icon"></i>
+            <div class="upload-text">Click or Drag Image Here</div>
+            <div class="upload-hint">Supports JPG, PNG (Max 5MB)</div>
+            <input
+              type="file"
+              id="file-input"
+              style="display: none"
+              accept="image/*"
+            />
+          </div>
+
+          <button class="btn-analyze" id="btn-run-model">
+            Run Diagnostics
+          </button>
+        </div>
+
+        <div class="glass-panel">
+          <h3 style="margin-top: 0; font-weight: 600">
+            <i
+              class="fa-solid fa-microscope"
+              style="color: var(--accent); margin-right: 10px"
+            ></i>
+            Analysis Results
+          </h3>
+          <p style="color: var(--muted); font-size: 13px; margin-bottom: 25px">
+            Neural network confidence scoring and mitigation plan.
+          </p>
+
+          <div class="img-preview" id="preview-container">
+            <span id="preview-text" style="color: var(--muted); font-size: 12px"
+              ><i
+                class="fa-regular fa-image"
+                style="
+                  font-size: 24px;
+                  display: block;
+                  margin-bottom: 10px;
+                  text-align: center;
+                "
+              ></i>
+              Awaiting Image</span
+            >
+            <img id="scanned-image" src="" alt="Crop Leaf Scan" />
+          </div>
+
+          <div class="result-header">
+            <div>
+              <div
+                style="
+                  font-size: 11px;
+                  color: var(--muted);
+                  text-transform: uppercase;
+                  letter-spacing: 1px;
+                  margin-bottom: 5px;
+                "
+              >
+                Detected Condition
+              </div>
+              <h2 class="disease-title" id="out-disease-name">
+                Pending Scan...
+              </h2>
+              <div
+                style="font-size: 13px; color: var(--muted)"
+                id="out-crop-type"
+              >
+                Crop: Unknown
+              </div>
+            </div>
+            <div class="confidence-badge" id="out-confidence">
+              <i class="fa-solid fa-bullseye"></i> --% Match
+            </div>
+          </div>
+
+          <div class="treatment-box">
+            <h4 class="treatment-title">
+              <i class="fa-solid fa-prescription-bottle-medical"></i>
+              Recommended Mitigation
+            </h4>
+            <ul class="mitigation-list" id="out-treatment-list">
+              <li>Upload an image to generate an AI-driven treatment plan.</li>
+              <li>Ensure the leaf is well-lit and clearly focused.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 1. Target the DOM Elements
+      const fileInput = document.getElementById("file-input");
+      const dropZone = document.getElementById("drop-zone");
+      const runBtn = document.getElementById("btn-run-model");
+      const previewImg = document.getElementById("scanned-image");
+      const previewText = document.getElementById("preview-text");
+
+      let scanCount = 0;
+      let currentBase64Image = null;
+
+      // 2. Click drop-zone to open file selector
+      dropZone.addEventListener("click", () => {
+        fileInput.click();
+      });
+
+      // 3. Read the image, show the preview, and convert to Base64
+      fileInput.addEventListener("change", function () {
+        if (this.files && this.files.length > 0) {
+          const file = this.files[0];
+          const reader = new FileReader();
+
+          reader.onload = function (e) {
+            currentBase64Image = e.target.result;
+            // Display the image in the UI
+            previewImg.src = currentBase64Image;
+            previewImg.style.display = "block";
+            previewText.style.display = "none";
+            dropZone.style.borderColor = "#2ecc71"; // Turn border green
+          };
+
+          reader.readAsDataURL(file);
+        }
+      });
+
+      // 4. Send to the Django Backend
+      runBtn.addEventListener("click", () => {
+        if (!currentBase64Image) {
+          alert("Please upload a crop leaf image first!");
+          return;
+        }
+
+        // Show loading state
+        runBtn.innerHTML =
+          '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing Neural Network...';
+        runBtn.style.opacity = "0.8";
+        runBtn.disabled = true;
+        document.getElementById("out-disease-name").innerText = "Scanning...";
+
+        // THE SECRET PROMPT: Force Gemini to return JSON data so we can map it to your UI
+        const secretPrompt = `Analyze this crop leaf. You must reply ONLY in this exact JSON format, with no other text: {"disease": "Disease Name or Healthy", "crop": "Crop Name", "confidence": "95%", "treatment": "First step. Second step. Third step."}`;
+
+        // Hit the existing chat backend we built earlier
+        fetch("/ai/chat/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: secretPrompt,
+            persona: "Pest Specialist", // Use the specialist persona
+            length: "Detailed",
+            image: currentBase64Image,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.status === "success") {
+              try {
+                scanCount++;
+                document.getElementById("scan-history").innerHTML =
+                  `${scanCount} scans Today`;
+                // 1. Hunt for the JSON object inside the text using Regex
+                let jsonMatch = data.reply.match(/\{[\s\S]*\}/);
+
+                if (!jsonMatch) {
+                  throw new Error("AI did not return valid JSON structure.");
+                }
+
+                // 2. Parse only the extracted JSON block
+                let cleanJsonString = jsonMatch[0];
+                let aiData = JSON.parse(cleanJsonString);
+
+                // 3. Inject the AI data directly into your UI fields
+                document.getElementById("out-disease-name").innerText =
+                  aiData.disease || "Unknown";
+                document.getElementById("out-crop-type").innerText =
+                  "Crop: " + (aiData.crop || "Unknown");
+                document.getElementById("out-confidence").innerHTML =
+                  `<i class="fa-solid fa-bullseye"></i> ${aiData.confidence || "N/A"} Match`;
+
+                // 4. Format the treatment list safely
+                if (aiData.treatment) {
+                  let treatments = aiData.treatment
+                    .split(". ")
+                    .filter((t) => t.trim() !== "");
+                  let listHtml = "";
+                  treatments.forEach((t) => {
+                    listHtml += `<li>${t.replace(/\.$/, "")}.</li>`;
+                  });
+                  document.getElementById("out-treatment-list").innerHTML =
+                    listHtml;
+                } else {
+                  document.getElementById("out-treatment-list").innerHTML =
+                    "<li>No treatment data provided.</li>";
+                }
+              } catch (e) {
+                console.error("Data Extraction Failed:", e);
+                console.log("Raw AI Reply was:", data.reply); // Logs exactly what broke it so you can see
+                document.getElementById("out-disease-name").innerText =
+                  "Diagnosis Complete";
+                document.getElementById("out-treatment-list").innerHTML =
+                  `<li>${data.reply.replace(/(<([^>]+)>)/gi, "")}</li>`;
+              }
+            } else {
+              document.getElementById("out-disease-name").innerText =
+                "System Error";
+              document.getElementById("out-treatment-list").innerHTML =
+                `<li>${data.reply}</li>`;
+            }
+
+            // Reset Button
+            runBtn.innerHTML = "Run Diagnostics";
+            runBtn.style.opacity = "1";
+            runBtn.disabled = false;
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            document.getElementById("out-disease-name").innerText =
+              "Network Error";
+            runBtn.innerHTML = "Run Diagnostics";
+            runBtn.style.opacity = "1";
+            runBtn.disabled = false;
+          });
+      });
+    </script>
+  </body>
+</html>

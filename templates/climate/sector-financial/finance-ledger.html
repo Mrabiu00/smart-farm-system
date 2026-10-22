@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Financial Ledger</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --danger: #e74c3c; --warning: #f1c40f;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 24px; overflow-x: hidden; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 950px) { .layout-grid { grid-template-columns: 1fr 1.5fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); height: fit-content; }
+
+        /* Form Styling */
+        .form-group { margin-bottom: 22px; }
+        .form-group label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1.2px; }
+        .form-group input, .form-group select { 
+            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); 
+            padding: 15px; border-radius: 14px; color: white; outline: none; transition: 0.3s; box-sizing: border-box; font-family: inherit;
+        }
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); }
+
+        .btn-submit { 
+            width: 100%; background: linear-gradient(90deg, var(--primary), #5a44ff); color: white; border: none; 
+            padding: 18px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 10px; font-size: 14px;
+        }
+        .btn-submit:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(123, 97, 255, 0.25); }
+
+        /* Ledger Analytics */
+        .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px; }
+        .metric-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; padding: 20px; text-align: center; }
+        .metric-label { font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+        .metric-val { font-size: 22px; font-weight: 700; }
+
+        /* Transaction List */
+        .tx-list { margin-top: 20px; max-height: 400px; overflow-y: auto; padding-right: 10px; }
+        .tx-list::-webkit-scrollbar { width: 6px; }
+        .tx-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        
+        .tx-item { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 15px; transition: 0.3s; }
+        .tx-item:hover { border-color: var(--primary); }
+        .tx-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-right: 15px; flex-shrink: 0; }
+        .tx-info { flex: 1; }
+        .tx-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; color: var(--text); }
+        .tx-meta { font-size: 11px; color: var(--muted); }
+        .tx-amount { font-weight: 700; font-size: 16px; text-align: right; }
+
+        .type-in { color: var(--accent); }
+        .type-out { color: var(--danger); }
+        
+        .bg-in { background: rgba(46, 204, 113, 0.1); color: var(--accent); border: 1px solid rgba(46, 204, 113, 0.2); }
+        .bg-out { background: rgba(231, 76, 60, 0.1); color: var(--danger); border: 1px solid rgba(231, 76, 60, 0.2); }
+
+        .chart-container { height: 200px; width: 100%; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 20px; }
+    </style>
+</head>
+<body>
+
+
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/finance/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Finance Hub</a>
+            <h1 style="margin:0; font-size: 28px; font-weight: 600;">Revenue & Expense Ledger</h1>
+        </div>
+        <div style="text-align: right;">
+            <div id="db-connection-status" style="font-size: 12px; color: var(--primary);"><i class="fa-solid fa-database"></i> Database Ready</div>
+            <div id="sync-timestamp" style="font-size: 14px; color: var(--muted); margin-top: 5px;">Awaiting Data Sync...</div>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-file-invoice-dollar" style="color:var(--primary); margin-right: 10px;"></i> Log Transaction</h3>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 25px;">Record a new farm expense or harvest revenue.</p>
+            
+            <div class="form-group">
+                <label>Transaction Type</label>
+                <select id="tx-type">
+                    <option value="expense">Expense (Money Out)</option>
+                    <option value="revenue">Revenue (Money In)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Category</label>
+                <select id="tx-category">
+                    <option value="seeds">Seeds & Seedlings</option>
+                    <option value="fertilizer">Fertilizer & Chemicals</option>
+                    <option value="labor">Labor & Wages</option>
+                    <option value="equipment">Equipment & Maintenance</option>
+                    <option value="harvest_sale">Harvest Sale</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Amount (NGN)</label>
+                <input type="number" id="tx-amount" placeholder="e.g. 50000">
+            </div>
+
+            <div class="form-group">
+                <label>Date</label>
+                <input type="date" id="tx-date">
+            </div>
+
+            <div class="form-group">
+                <label>Description (Optional)</label>
+                <input type="text" id="tx-desc" placeholder="e.g. Purchased NPK 15:15:15">
+            </div>
+
+            <button class="btn-submit" id="btn-log-tx">Save to Database</button>
+        </div>
+
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-wallet" style="color:var(--primary); margin-right: 10px;"></i> Financial Overview</h3>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total Revenue</div>
+                    <div class="metric-val type-in" id="val-total-rev">₦--</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Total Expenses</div>
+                    <div class="metric-val type-out" id="val-total-exp">₦--</div>
+                </div>
+                <div class="metric-card" style="border-color: var(--primary); background: rgba(123, 97, 255, 0.05);">
+                    <div class="metric-label" style="color: var(--primary);">Net Profit</div>
+                    <div class="metric-val" id="val-net-profit">₦--</div>
+                </div>
+            </div>
+
+            <h4 style="font-size: 13px; color: var(--muted); margin-bottom: 10px; text-transform: uppercase;">Recent Transactions</h4>
+            
+            <div class="tx-list" id="ledger-container">
+                <div class="tx-item" id="tx-skeleton-1">
+                    <div class="tx-icon" style="background: rgba(255,255,255,0.05); color: var(--muted);"><i class="fa-solid fa-spinner fa-spin"></i></div>
+                    <div class="tx-info">
+                        <div class="tx-title" id="tx-title-1">Fetching Data...</div>
+                        <div class="tx-meta" id="tx-meta-1">--/--/----</div>
+                    </div>
+                    <div class="tx-amount" style="color: var(--muted);" id="tx-amt-1">₦--</div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="cashflowChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Initialize State Variables to hold the totals
+    let totalRev = 0;
+    let totalExp = 0;
+
+    // 2. Initialize the Cashflow Chart
+    const ctx = document.getElementById('cashflowChart').getContext('2d');
+    let cashflowChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Current'], 
+            datasets: [
+                {
+                    label: 'Revenue',
+                    data: [0, 0, 0, 0, 0, 0], 
+                    backgroundColor: 'rgba(46, 204, 113, 0.8)',
+                    borderRadius: 4
+                },
+                {
+                    label: 'Expenses',
+                    data: [0, 0, 0, 0, 0, 0], 
+                    backgroundColor: 'rgba(231, 76, 60, 0.8)',
+                    borderRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { ticks: { color: '#8b8b9a', font: {size: 10} }, grid: { display: false } },
+                y: { ticks: { color: '#8b8b9a', font: {size: 10} }, grid: { color: 'rgba(255,255,255,0.05)' } }
+            },
+            plugins: { legend: { labels: { color: '#8b8b9a', font: {size: 11} } } }
+        }
+    });
+
+    // Helper function to update dashboard UI
+    function updateDashboardUI() {
+        const netProfit = totalRev - totalExp;
+
+        document.getElementById('val-total-rev').innerText = `₦${totalRev.toLocaleString()}`;
+        document.getElementById('val-total-exp').innerText = `₦${totalExp.toLocaleString()}`;
+        
+        const profitEl = document.getElementById('val-net-profit');
+        profitEl.innerText = `₦${netProfit.toLocaleString()}`;
+        profitEl.style.color = netProfit >= 0 ? 'var(--accent)' : 'var(--danger)';
+
+        cashflowChart.update();
+    }
+
+    // 3. Attach click event to the "Save Transaction" button
+    document.getElementById('btn-log-tx').addEventListener('click', () => {
+        // Grab values from your input form
+        const type = document.getElementById('tx-type').value; // Now properly checks for 'revenue' or 'expense'
+        const category = document.getElementById('tx-category').value;
+        const amount = Number(document.getElementById('tx-amount').value) || 0;
+        const date = document.getElementById('tx-date').value || new Date().toISOString().split('T')[0];
+        const desc = document.getElementById('tx-desc').value || "Standard Entry";
+
+        if (amount <= 0) {
+            alert("Please enter a valid transaction amount.");
+            return;
+        }
+
+        // Update the Math and the Chart Arrays
+        if (type === 'revenue') {
+            totalRev += amount;
+            cashflowChart.data.datasets[0].data[5] += amount;
+        } else {
+            totalExp += amount;
+            cashflowChart.data.datasets[1].data[5] += amount; 
+        }
+        
+        updateDashboardUI();
+
+        // Target the ledger list container
+        const container = document.getElementById('ledger-container');
+        
+        // Clear the default placeholder text if it is the first entry
+        if (container.innerText.includes("No transactions")) {
+            container.innerHTML = "";
+        }
+
+        // Setup the styling based on whether it is money in or money out
+        const iconClass = type === 'revenue' ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down';
+        const colorClass = type === 'revenue' ? 'color: var(--accent);' : 'color: var(--danger);';
+        const sign = type === 'revenue' ? '+' : '-';
+
+        // Create a new HTML element for the ledger row
+        const newRow = document.createElement('div');
+        newRow.style.display = 'flex';
+        newRow.style.justifyContent = 'space-between';
+        newRow.style.alignItems = 'center';
+        newRow.style.padding = '15px';
+        newRow.style.borderBottom = '1px solid var(--border)';
+        
+        newRow.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px;">
+                    <i class="fa-solid ${iconClass}" style="${colorClass}"></i>
+                </div>
+                <div>
+                    <div style="font-weight: 600; font-size: 15px;">${category}</div>
+                    <div style="font-size: 11px; color: var(--muted);">${date} • ${desc}</div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="font-weight: 700; font-size: 16px; ${colorClass}">
+                    ${sign}₦${amount.toLocaleString()}
+                </div>
+                <button class="delete-btn" style="background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 5px;">
+                    <i class="fa-solid fa-trash" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--muted)'"></i>
+                </button>
+            </div>
+        `;
+        
+        // Attach Delete Logic for this specific row
+        const deleteBtn = newRow.querySelector('.delete-btn');
+        deleteBtn.addEventListener('click', () => {
+            // Reverse the math
+            if (type === 'revenue') {
+                totalRev -= amount;
+                cashflowChart.data.datasets[0].data[5] -= amount;
+            } else {
+                totalExp -= amount;
+                cashflowChart.data.datasets[1].data[5] -= amount; 
+            }
+            
+            updateDashboardUI(); // Update numbers and chart
+            newRow.remove();     // Remove it from the screen
+            
+            // Put placeholder back if list is empty
+            if (container.children.length === 0) {
+                container.innerHTML = `<div style="padding: 30px; text-align: center; color: var(--muted); font-size: 13px;">No transactions logged yet.</div>`;
+            }
+        });
+
+        // Append the new transaction to the top of the list
+        container.prepend(newRow);
+
+        // Reset the form inputs for the next entry
+        document.getElementById('tx-amount').value = '';
+        document.getElementById('tx-desc').value = '';
+    });
+</script>
+
+</body>
+</html>

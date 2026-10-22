@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Advanced Additions</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+            --gap: 25px;
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 20px; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .header-section { margin-bottom: 40px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .advanced-grid { display: grid; grid-template-columns: 1fr; gap: var(--gap); margin-top: 20px; }
+        @media (min-width: 850px) { .advanced-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        .panel-link { text-decoration: none; color: inherit; display: block; height: 100%; }
+        
+        .advanced-card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 24px;
+            padding: 30px; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative; overflow: hidden; height: 100%; box-sizing: border-box;
+        }
+        .panel-link:hover .advanced-card { transform: translateY(-8px); border-color: var(--primary); box-shadow: 0 15px 35px rgba(123, 97, 255, 0.12); }
+
+        .icon-box { 
+            width: 55px; height: 55px; background: rgba(123, 97, 255, 0.08); 
+            border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; border: 1px solid rgba(123, 97, 255, 0.2);
+        }
+        .icon-box i { color: var(--primary); font-size: 24px; }
+
+        .status-pill { font-size: 10px; padding: 5px 12px; border-radius: 20px; background: rgba(255,255,255,0.04); color: var(--muted); float: right; letter-spacing: 0.5px; }
+    </style>
+</head>
+<body>
+
+
+<div class="container">
+    <div class="header-section">
+        <a href="/dashboard/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Return to Hub</a>
+        <h1 style="font-size: 28px; margin: 0; display: flex; align-items: center; gap: 12px;">
+            <i class="fa-solid fa-satellite" style="color: var(--primary);"></i> Advanced Additions
+        </h1>
+        <p style="color: var(--muted); font-size: 14px; margin-top: 10px;">Use satellite health (NDVI), crop rotation, simulation tools, offline mode and reports.</p>
+    </div>
+
+    <div class="advanced-grid">
+        <a href="/advanced/satellite/" class="panel-link">
+            <div class="advanced-card">
+                <span class="status-pill">ID: api_ndvi_sync</span>
+                <div class="icon-box"><i class="fa-solid fa-earth-africa"></i></div>
+                <h3 style="margin: 0 0 10px;">Satellite Health (NDVI)</h3>
+                <p style="color: var(--muted); font-size: 13px; line-height: 1.6;">Integrate geospatial APIs to monitor crop vitality and vegetation indices from space.</p>
+            </div>
+        </a>
+
+        <a href="/advanced/rotation/" class="panel-link">
+            <div class="advanced-card">
+                <span class="status-pill">ID: logic_crop_rot</span>
+                <div class="icon-box"><i class="fa-solid fa-arrows-rotate"></i></div>
+                <h3 style="margin: 0 0 10px;">Crop Rotation Engine</h3>
+                <p style="color: var(--muted); font-size: 13px; line-height: 1.6;">Automate multi-season planting schedules to preserve soil nutrients and prevent pest buildup.</p>
+            </div>
+        </a>
+
+        <a href="/advanced/simulation/" class="panel-link">
+            <div class="advanced-card">
+                <span class="status-pill">ID: engine_sim</span>
+                <div class="icon-box"><i class="fa-solid fa-flask-vial"></i></div>
+                <h3 style="margin: 0 0 10px;">Simulation Tools</h3>
+                <p style="color: var(--muted); font-size: 13px; line-height: 1.6;">Run "what-if" scenarios for drought, over-watering, or pest invasions to test farm resilience.</p>
+            </div>
+        </a>
+
+        <a href="/advanced/offline/" class="panel-link">
+            <div class="advanced-card">
+                <span class="status-pill">ID: local_db_sync</span>
+                <div class="icon-box"><i class="fa-solid fa-wifi-slash"></i></div>
+                <h3 style="margin: 0 0 10px;">Offline Mode Manager</h3>
+                <p style="color: var(--muted); font-size: 13px; line-height: 1.6;">Manage local storage data for seamless field operation when internet connectivity is lost.</p>
+            </div>
+        </a>
+
+        <a href="/advanced/reports/" class="panel-link">
+            <div class="advanced-card">
+                <span class="status-pill">ID: pdf_generator</span>
+                <div class="icon-box"><i class="fa-solid fa-file-pdf"></i></div>
+                <h3 style="margin: 0 0 10px;">Automated Reports</h3>
+                <p style="color: var(--muted); font-size: 13px; line-height: 1.6;">Compile financial, AI, and automation data into professional PDF reports for stakeholders.</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>

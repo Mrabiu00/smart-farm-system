@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Simulation Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --danger: #e74c3c; --warning: #f1c40f; --info: #3498db;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 24px; overflow-x: hidden; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 950px) { .layout-grid { grid-template-columns: 1fr 1.5fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); height: fit-content; }
+
+        /* Configuration Form */
+        .form-group { margin-bottom: 22px; }
+        .form-group label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1.2px; }
+        .form-group select, .form-group input { 
+            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); 
+            padding: 15px; border-radius: 14px; color: white; outline: none; transition: 0.3s; box-sizing: border-box; font-family: inherit;
+        }
+        .form-group select:focus, .form-group input:focus { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); }
+
+        .btn-simulate { 
+            width: 100%; background: linear-gradient(90deg, var(--danger), #c0392b); color: white; border: none; 
+            padding: 18px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 10px; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-simulate:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(231, 76, 60, 0.25); }
+
+        /* Impact Output UI */
+        .impact-hero { display: flex; justify-content: space-between; align-items: center; padding: 30px; background: rgba(231, 76, 60, 0.05); border: 1px solid rgba(231, 76, 60, 0.2); border-radius: 20px; margin-bottom: 25px; }
+        .impact-label { font-size: 12px; color: var(--danger); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; font-weight: 600; }
+        .impact-val { font-size: 42px; font-weight: 800; margin: 0; line-height: 1; color: var(--text); }
+        .impact-sub { font-size: 13px; font-weight: 500; margin-top: 8px; color: var(--muted); }
+        
+        .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .metric-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+        .metric-title { font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 5px; }
+        .metric-data { font-size: 20px; font-weight: 700; color: var(--text); }
+
+        .mitigation-box { background: rgba(46, 204, 113, 0.05); border-left: 4px solid var(--accent); padding: 20px; border-radius: 12px; margin-bottom: 25px; }
+        .mitigation-title { color: var(--accent); font-size: 13px; font-weight: 600; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .chart-container { height: 220px; width: 100%; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/advanced/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Advanced Hub</a>
+            <h1 style="margin:0; font-size: 28px; font-weight: 600;">Simulation Engine</h1>
+        </div>
+        <div style="text-align: right;">
+            <div id="sim-status" style="font-size: 12px; color: var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> Risk Modeling Active</div>
+            <div id="last-sim-update" style="font-size: 14px; color: var(--muted); margin-top: 5px;">Awaiting Scenario Input...</div>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-flask-vial" style="color:var(--danger); margin-right: 10px;"></i> Scenario Builder</h3>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 25px;">Define environmental hazards to test your farm's resilience and forecast potential losses.</p>
+            
+            <div class="form-group">
+                <label>Target Crop Profile</label>
+                <select id="sim-crop">
+                    <option value="maize">Maize (Current Planting)</option>
+                    <option value="rice">Rice (Paddy)</option>
+                    <option value="soybeans">Soybeans</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Hazard Type</label>
+                <select id="sim-hazard">
+                    <option value="drought">Severe Drought (Water Deficit)</option>
+                    <option value="flood">Flooding / Waterlogging</option>
+                    <option value="pest">Locust / Fall Armyworm Outbreak</option>
+                    <option value="heatwave">Extreme Heatwave</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Intensity / Duration</label>
+                <select id="sim-intensity">
+                    <option value="low">Low (1-2 Weeks)</option>
+                    <option value="medium">Moderate (3-4 Weeks)</option>
+                    <option value="severe">Severe (5+ Weeks)</option>
+                </select>
+            </div>
+
+            <button class="btn-simulate" id="btn-run-simulation"><i class="fa-solid fa-biohazard"></i> Run Stress Test</button>
+        </div>
+
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-chart-area" style="color:var(--primary); margin-right: 10px;"></i> Projected Impact</h3>
+            
+            <div class="impact-hero">
+                <div>
+                    <div class="impact-label" id="out-hazard-name">Scenario: Pending</div>
+                    <div class="impact-val" id="out-yield-loss">--%</div>
+                    <div class="impact-sub">Estimated Yield Reduction</div>
+                </div>
+                <div style="text-align: right;">
+                    <div class="impact-label" style="color: var(--muted);">Revenue Impact</div>
+                    <div class="impact-val" id="out-revenue-loss" style="font-size: 28px;">₦--</div>
+                </div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-title">Baseline Expected Yield</div>
+                    <div class="metric-data" id="out-baseline-yield">-- MT</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Simulated Final Yield</div>
+                    <div class="metric-data" id="out-simulated-yield" style="color: var(--danger);">-- MT</div>
+                </div>
+            </div>
+
+            <div class="mitigation-box">
+                <div class="mitigation-title"><i class="fa-solid fa-shield-halved"></i> AI Mitigation Strategy</div>
+                <p style="margin: 0; font-size: 13px; line-height: 1.6; color: var(--text);" id="out-mitigation-advice">
+                    Submit a scenario to generate preventative measures and recovery protocols.
+                </p>
+            </div>
+
+            <h4 style="font-size: 13px; color: var(--muted); margin-bottom: 10px; text-transform: uppercase;">Growth Curve: Baseline vs. Simulated</h4>
+            <div class="chart-container">
+                <canvas id="simulationChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Initialize Chart
+    const ctx = document.getElementById('simulationChart').getContext('2d');
+    let simChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Week 4', 'Week 6', 'Week 8', 'Week 10', 'Week 12 (Harvest)'],
+            datasets: [
+                {
+                    label: 'Baseline Growth (Optimal)',
+                    data: [0, 0, 0, 0, 0], 
+                    borderColor: '#2ecc71',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    tension: 0.4,
+                    pointBackgroundColor: '#2ecc71',
+                    pointRadius: 0
+                },
+                {
+                    label: 'Simulated Growth (Hazard)',
+                    data: [0, 0, 0, 0, 0], 
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#e74c3c',
+                    pointRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { ticks: { color: '#8b8b9a', font: {size: 10} }, grid: { display: false } },
+                y: { ticks: { color: '#8b8b9a', font: {size: 10} }, grid: { color: 'rgba(255,255,255,0.05)' } }
+            },
+            plugins: {
+                legend: { labels: { color: '#8b8b9a', font: {size: 11} } },
+                tooltip: { mode: 'index', intersect: false }
+            }
+        }
+    });
+
+    // 2. Fetch Data Logic
+    document.getElementById('btn-run-simulation').addEventListener('click', async () => {
+        const crop = document.getElementById('sim-crop').value;
+        const hazard = document.getElementById('sim-hazard').value;
+        const intensity = document.getElementById('sim-intensity').value;
+        const btn = document.getElementById('btn-run-simulation');
+        
+        // Show loading state on button
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Simulating...';
+        btn.style.opacity = '0.7';
+        
+        try {
+            const res = await fetch('/api/run-simulation/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ crop: crop, hazard: hazard, intensity: intensity })
+            });
+            
+            const result = await res.json();
+            
+            // Map the JSON response to the HTML elements
+            if(result && result.data) {
+                const d = result.data;
+                document.getElementById('out-hazard-name').innerText = `Scenario: ${d.hazard_name}`;
+                document.getElementById('out-yield-loss').innerText = d.yield_loss;
+                document.getElementById('out-revenue-loss').innerText = d.revenue_loss;
+                document.getElementById('out-baseline-yield').innerText = `${d.baseline_yield} MT`;
+                document.getElementById('out-simulated-yield').innerText = `${d.simulated_yield} MT`;
+                document.getElementById('out-mitigation-advice').innerText = d.advice;
+                
+                // Update Chart Arrays dynamically
+                simChart.data.datasets[0].data = d.baseline_data;
+                simChart.data.datasets[1].data = d.simulated_data;
+                simChart.update();
+            }
+        } catch(e) {
+            console.error("Simulation API Error:", e);
+            document.getElementById('out-mitigation-advice').innerText = "System offline. Failed to fetch simulation data.";
+        } finally {
+            // Restore button state
+            btn.innerHTML = '<i class="fa-solid fa-biohazard"></i> Run Stress Test';
+            btn.style.opacity = '1';
+            document.getElementById('last-sim-update').innerText = `Last Run: ${new Date().toLocaleTimeString()}`;
+        }
+    });
+</script>
+</body>
+</html>
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Simulation Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --danger: #e74c3c; --warning: #f1c40f; --info: #3498db;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 24px; overflow-x: hidden; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 950px) { .layout-grid { grid-template-columns: 1fr 1.5fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); height: fit-content; }
+
+        /* Configuration Form */
+        .form-group { margin-bottom: 22px; }
+        .form-group label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1.2px; }
+        .form-group select, .form-group input { 
+            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); 
+            padding: 15px; border-radius: 14px; color: white; outline: none; transition: 0.3s; box-sizing: border-box; font-family: inherit;
+        }
+        .form-group select:focus, .form-group input:focus { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); }
+
+        .btn-simulate { 
+            width: 100%; background: linear-gradient(90deg, var(--danger), #c0392b); color: white; border: none; 
+            padding: 18px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 10px; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-simulate:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(231, 76, 60, 0.25); }
+
+        /* Impact Output UI */
+        .impact-hero { display: flex; justify-content: space-between; align-items: center; padding: 30px; background: rgba(231, 76, 60, 0.05); border: 1px solid rgba(231, 76, 60, 0.2); border-radius: 20px; margin-bottom: 25px; }
+        .impact-label { font-size: 12px; color: var(--danger); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; font-weight: 600; }
+        .impact-val { font-size: 42px; font-weight: 800; margin: 0; line-height: 1; color: var(--text); }
+        .impact-sub { font-size: 13px; font-weight: 500; margin-top: 8px; color: var(--muted); }
+        
+        .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .metric-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+        .metric-title { font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 5px; }
+        .metric-data { font-size: 20px; font-weight: 700; color: var(--text); }
+
+        .mitigation-box { background: rgba(46, 204, 113, 0.05); border-left: 4px solid var(--accent); padding: 20px; border-radius: 12px; margin-bottom: 25px; }
+        .mitigation-title { color: var(--accent); font-size: 13px; font-weight: 600; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .chart-container { height: 220px; width: 100%; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/advanced/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Advanced Hub</a>
+            <h1 style="margin:0; font-size: 28px; font-weight: 600;">Simulation Engine</h1>
+        </div>
+        <div style="text-align: right;">
+            <div id="sim-status" style="font-size: 12px; color: var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> Risk Modeling Active</div>
+            <div style="font-size: 14px; color: var(--muted); margin-top: 5px;">Awaiting Scenario Input...</div>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-flask-vial" style="color:var(--danger); margin-right: 10px;"></i> Scenario Builder</h3>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 25px;">Define environmental hazards to test your farm's resilience and forecast potential losses.</p>
+            
+            <div class="form-group">
+                <label>Target Crop Profile</label>
+                <select id="sim-crop">
+                    <option value="maize">Maize (Current Planting)</option>
+                    <option value="rice">Rice (Paddy)</option>
+                    <option value="soybeans">Soybeans</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Hazard Type</label>
+                <select id="sim-hazard">
+                    <option value="drought">Severe Drought (Water Deficit)</option>
+                    <option value="flood">Flooding / Waterlogging</option>
+                    <option value="pest">Locust / Fall Armyworm Outbreak</option>
+                    <option value="heatwave">Extreme Heatwave</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Intensity / Duration</label>
+                <select id="sim-intensity">
+                    <option value="low">Low (1-2 Weeks)</option>
+                    <option value="medium">Moderate (3-4 Weeks)</option>
+                    <option value="severe">Severe (5+ Weeks)</option>
+                </select>
+            </div>
+
+            <button class="btn-simulate" id="btn-run-simulation"><i class="fa-solid fa-biohazard"></i> Run Stress Test</button>
+        </div>
+
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-chart-area" style="color:var(--primary); margin-right: 10px;"></i> Projected Impact</h3>
+            
+            <div class="impact-hero">
+                <div>
+                    <div class="impact-label" id="out-hazard-name">Scenario: Pending</div>
+                    <div class="impact-val" id="out-yield-loss">--%</div>
+                    <div class="impact-sub">Estimated Yield Reduction</div>
+                </div>
+                <div style="text-align: right;">
+                    <div class="impact-label" style="color: var(--muted);">Revenue Impact</div>
+                    <div class="impact-val" id="out-revenue-loss" style="font-size: 28px;">₦--</div>
+                </div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-title">Baseline Expected Yield</div>
+                    <div class="metric-data" id="out-baseline-yield">-- MT</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Simulated Final Yield</div>
+                    <div class="metric-data" id="out-simulated-yield" style="color: var(--danger);">-- MT</div>
+                </div>
+            </div>
+
+            <div class="mitigation-box">
+                <div class="mitigation-title"><i class="fa-solid fa-shield-halved"></i> AI Mitigation Strategy</div>
+                <p style="margin: 0; font-size: 13px; line-height: 1.6; color: var(--text);" id="out-mitigation-advice">
+                    Submit a scenario to generate preventative measures and recovery protocols.
+                </p>
+            </div>
+
+            <h4 style="font-size: 13px; color: var(--muted); margin-bottom: 10px; text-transform: uppercase;">Growth Curve: Baseline vs. Simulated</h4>
+            <div class="chart-container">
+                <canvas id="simulationChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // BACKEND DEVELOPER INTERFACE
+    // Input IDs: sim-crop, sim-hazard, sim-intensity, btn-run-simulation
+    // Output Target IDs: out-hazard-name, out-yield-loss, out-revenue-loss, out-baseline-yield, out-simulated-yield, out-mitigation-advice
+    
+    // Comparative Line Chart (Zeroed out for Backend Injection)
+    const ctx = document.getElementById('simulationChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Week 4', 'Week 6', 'Week 8', 'Week 10', 'Week 12 (Harvest)'],
+            datasets: [
+                {
+                    label: 'Baseline Growth (Optimal)',
+                    data: [0, 0, 0, 0, 0], // Backend: Inject standard healthy growth curve here
+                    borderColor: '#2ecc71',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    tension: 0.4,
+                    pointBackgroundColor: '#2ecc71',
+                    pointRadius: 0
+                },
+                {
+                    label: 'Simulated Growth (Hazard)',
+                    data: [0, 0, 0, 0, 0], // Backend: Inject the degraded growth curve resulting from the hazard
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#e74c3c',
+                    pointRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { ticks: { color: '#8b8b9a', font: {size: 10} }, grid: { display: false } },
+                y: { ticks: { color: '#8b8b9a', font: {size: 10} }, grid: { color: 'rgba(255,255,255,0.05)' } }
+            },
+            plugins: {
+                legend: { labels: { color: '#8b8b9a', font: {size: 11} } },
+                tooltip: { mode: 'index', intersect: false }
+            }
+        }
+    });
+
+    // Frontend interaction logic for developer
+    document.getElementById('btn-run-simulation').addEventListener('click', () => {
+        console.log("Stress Test triggered. Backend API should fetch parameters, calculate yield drop, and populate the UI tags and Chart arrays.");
+    });
+</script>
+
+</body>
+</html> -->

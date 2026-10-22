@@ -1,0 +1,678 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Live Market Terminal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; 
+            --accent: #2ecc71; --danger: #e74c3c; --warning: #f1c40f;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 30px 20px; overflow-x: hidden; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .ticker-wrap { width: 100%; background: rgba(123, 97, 255, 0.05); border-top: 1px solid rgba(123, 97, 255, 0.2); border-bottom: 1px solid rgba(123, 97, 255, 0.2); padding: 10px 0; overflow: hidden; margin-bottom: 30px; display: flex; align-items: center; }
+        .ticker-label { background: var(--primary); color: #fff; font-size: 11px; font-weight: 700; padding: 5px 15px; text-transform: uppercase; letter-spacing: 1px; z-index: 10; margin-right: 15px; border-radius: 0 10px 10px 0; }
+        .ticker-move { display: inline-flex; white-space: nowrap; animation: ticker 25s linear infinite; gap: 40px; }
+        .ticker-item { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; color: var(--muted); }
+        @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 25px; }
+        @media (min-width: 1000px) { .layout-grid { grid-template-columns: 1.5fr 1fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); height: fit-content; }
+
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .asset-title { font-size: 24px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 10px; }
+        .current-price { font-size: 32px; font-weight: 800; color: var(--text); margin: 5px 0 0; }
+        .price-change { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 5px; color: var(--muted); }
+        .up { color: var(--accent); } .down { color: var(--danger); }
+        .chart-container { height: 300px; width: 100%; margin-top: 20px; }
+
+        .watchlist-item { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 15px; transition: 0.3s; cursor: pointer; }
+        .watchlist-item:hover { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); }
+        .wl-name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+        .wl-vol { font-size: 11px; color: var(--muted); }
+        .wl-price { font-weight: 700; font-size: 16px; text-align: right; }
+        .wl-trend { font-size: 12px; font-weight: 600; margin-top: 4px; display: flex; align-items: center; justify-content: flex-end; gap: 4px; color: var(--muted); }
+
+        .arbitrage-table { width: 100%; border-collapse: collapse; margin-top: 25px; }
+        .arbitrage-table th { text-align: left; padding: 12px 15px; font-size: 11px; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border); }
+        .arbitrage-table td { padding: 15px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.02); font-weight: 500; }
+        .highlight-bid { color: var(--primary); font-weight: 700; background: rgba(123, 97, 255, 0.1); border-radius: 8px; padding: 4px 8px; }
+
+        .live-dot { width: 8px; height: 8px; background-color: var(--accent); border-radius: 50%; display: inline-block; box-shadow: 0 0 10px var(--accent); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.7; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.7; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/finance/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Finance Hub</a>
+            <h1 style="margin:0; font-size: 28px; font-weight: 600;">Commodity Market Terminal</h1>
+        </div>
+        <div style="text-align: right; background: rgba(255,255,255,0.03); padding: 10px 20px; border-radius: 12px; border: 1px solid var(--border);">
+            <div id="socket-status" style="font-size: 12px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
+                <span class="live-dot" style="background-color: var(--warning);"></span> AI SYNCING...
+            </div>
+            <div id="api-source" style="font-size: 11px; color: var(--muted); margin-top: 4px;">Source: Standby</div>
+        </div>
+    </div>
+
+    <!-- LIVE TICKER TAPE -->
+    <div class="ticker-wrap">
+        <div class="ticker-label">LATEST</div>
+        <div class="ticker-move">
+            <div class="ticker-item" id="tick-mz">Maize: Syncing...</div>
+            <div class="ticker-item" id="tick-rc">Rice: Syncing...</div>
+            <div class="ticker-item" id="tick-sg">Sorghum: Syncing...</div>
+            <div class="ticker-item" id="tick-sy">Soybeans: Syncing...</div>
+            <div class="ticker-item" id="tick-cs">Cassava: Syncing...</div>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <!-- MAIN CHART PANEL -->
+        <div class="glass-panel">
+            <div class="chart-header">
+                <div>
+                    <h2 class="asset-title" id="main-asset-name"><i class="fa-solid fa-wheat-awn" style="color:var(--primary);"></i> Maize</h2>
+                    <div class="current-price" id="main-price">₦--.00</div>
+                    <div class="price-change" id="main-change">Awaiting Market Data</div>
+                </div>
+                <div>
+                    <!-- TIMEFRAME DROPDOWN -->
+                    <select id="timeframe-select" style="background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--border); padding: 8px 15px; border-radius: 8px; outline: none; font-family: inherit; cursor: pointer;">
+                        <option value="1W">1W (Weekly)</option>
+                        <option value="1M">1M (Monthly)</option>
+                        <option value="1Y">1Y (Yearly)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="marketChart"></canvas>
+            </div>
+
+            <h4 style="margin: 35px 0 15px; font-size: 14px; color: var(--primary);"><i class="fa-solid fa-map-location-dot"></i> Regional Arbitrage (Sell Opportunities)</h4>
+            <p style="font-size: 12px; color: var(--muted); margin-top: -10px;">Compare buyer prices across key markets to maximize profit margins.</p>
+            
+            <!-- ARBITRAGE TABLE -->
+            <table class="arbitrage-table">
+                <thead>
+                    <tr>
+                        <th>Market Location</th>
+                        <th>Current Bid (MT)</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="arbitrage-body">
+                    <tr>
+                        <td>Katsina Central Market</td>
+                        <td id="arb-kt">₦--</td>
+                        <td id="act-kt">Hold</td>
+                    </tr>
+                    <tr>
+                        <td>Dawanau Market, Kano</td>
+                        <td class="highlight-bid" id="arb-kn">₦--</td>
+                        <td id="act-kn"><span class="highlight-bid">Sell Here</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- WATCHLIST PANEL -->
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-list" style="color:var(--primary); margin-right: 10px;"></i> Live Watchlist</h3>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 25px;">Real-time price feed per Metric Ton (MT).</p>
+
+            <div id="watchlist-container">
+                <!-- Watchlist items dynamically generated here -->
+            </div>
+            
+            <!-- ADD COMMODITY BUTTON -->
+            <button id="btn-add-commodity" style="width: 100%; margin-top: 15px; padding: 15px; background: transparent; border: 1px dashed var(--primary); color: var(--primary); border-radius: 12px; font-family: inherit; font-weight: 600; cursor: pointer; transition: 0.3s;">
+                <i class="fa-solid fa-plus"></i> Track New Commodity
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Initialize Chart.js
+    const ctx = document.getElementById('marketChart').getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(123, 97, 255, 0.4)');
+    gradient.addColorStop(1, 'rgba(123, 97, 255, 0.0)');
+
+    let marketChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Today'],
+            datasets: [{
+                label: 'Price (NGN)',
+                data: [0, 0, 0, 0, 0, 0, 0], 
+                borderColor: '#7b61ff', 
+                backgroundColor: gradient,
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#07070a',
+                pointBorderColor: '#7b61ff',
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { ticks: { color: '#8b8b9a', font: {size: 11} }, grid: { display: false } },
+                y: { ticks: { color: '#8b8b9a', font: {size: 11} }, grid: { color: 'rgba(255,255,255,0.05)' } }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    let currentLoadedAsset = 'Maize'; 
+
+    // 2. Main Logic to Fetch and Update Everything
+    async function loadMarketData(assetName) {
+        currentLoadedAsset = assetName;
+        
+        // Target elements
+        const priceDisplay = document.getElementById('main-price'); 
+        const changeDisplay = document.getElementById('main-change');
+        
+        // UI Loading State
+        document.getElementById('socket-status').innerHTML = '<span class="live-dot" style="background-color: var(--warning);"></span> AI SYNCING...';
+        document.getElementById('main-asset-name').innerHTML = `<i class="fa-solid fa-wheat-awn" style="color:var(--primary);"></i> ${assetName}`;
+        if (priceDisplay) priceDisplay.innerText = "Syncing..."; 
+        
+        try {
+            // Call your backend Django API
+            const response = await fetch(`/api/market-data/?asset=${assetName}`);
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                const data = result.data;
+                
+                // --- UPDATE MAIN PRICE ---
+                if (priceDisplay) priceDisplay.innerText = `₦${data.price.toLocaleString()}`;
+                
+                // --- UPDATE PERCENTAGE CHANGE (Green or Red) ---
+                if (changeDisplay) {
+                    if (data.change.includes('-')) {
+                        changeDisplay.innerHTML = `<i class="fa-solid fa-arrow-trend-down"></i> ${data.change}`;
+                        changeDisplay.className = 'price-change down';
+                    } else {
+                        changeDisplay.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> ${data.change}`;
+                        changeDisplay.className = 'price-change up';
+                    }
+                }
+
+                // --- UPDATE ARBITRAGE TABLE ---
+                document.getElementById('arb-kt').innerText = `₦${data.katsina_bid.toLocaleString()}`;
+                document.getElementById('arb-kn').innerText = `₦${data.kano_bid.toLocaleString()}`;
+
+                // --- UPDATE CHART HISTORY ---
+                marketChart.data.datasets[0].data = data.historical;
+                marketChart.update();
+
+                // --- UPDATE CONNECTION STATUS ---
+                document.getElementById('socket-status').innerHTML = '<span class="live-dot"></span> LIVE';
+                document.getElementById('api-source').innerText = result.note || 'Source: Gemini Engine';
+
+                // --- UPDATE TICKER TAPE ---
+                updateTicker(assetName, data.price);
+
+            } else {
+                if (priceDisplay) priceDisplay.innerText = "N/A";
+                document.getElementById('socket-status').innerHTML = '<span style="color: var(--danger);">SYNC FAILED</span>';
+            }
+        } catch (error) {
+            if (priceDisplay) priceDisplay.innerText = "Error";
+            document.getElementById('socket-status').innerHTML = '<span style="color: var(--danger);">DISCONNECTED</span>';
+        }
+    }
+
+    // 3. Ticker Helper
+    function updateTicker(assetName, price) {
+        const map = {'Maize': 'mz', 'Rice': 'rc', 'Sorghum': 'sg', 'Soybeans': 'sy', 'Cassava': 'cs'};
+        const id = map[assetName];
+        if (id) {
+            const el = document.getElementById(`tick-${id}`);
+            if(el) el.innerText = `${assetName}: ₦${price.toLocaleString()}`;
+        }
+    }
+
+    // 4. Watchlist & "Track New Commodity" Logic
+    const availableAssets = ['Rice', 'Sorghum', 'Soybeans', 'Cassava'];
+    let assetIndex = 0;
+    
+    document.getElementById('btn-add-commodity').addEventListener('click', function() {
+        if (assetIndex >= availableAssets.length) return; // Prevent endless clicking
+        
+        const nextAsset = availableAssets[assetIndex];
+        
+        // Add to Watchlist UI
+        const container = document.getElementById('watchlist-container');
+        const newItem = document.createElement('div');
+        newItem.className = 'watchlist-item';
+        
+        // Allow user to click the watchlist item to change the main chart
+        newItem.onclick = () => loadMarketData(nextAsset); 
+        
+        newItem.innerHTML = `
+            <div>
+                <div class="wl-name">${nextAsset}</div>
+                <div class="wl-vol">Tap to view data</div>
+            </div>
+            <div>
+                <div class="wl-price" style="color: var(--primary);"><i class="fa-solid fa-chart-line"></i> View</div>
+            </div>
+        `;
+        container.appendChild(newItem);
+        
+        // Load data into main terminal
+        loadMarketData(nextAsset);
+        assetIndex++;
+    });
+
+    // 5. Timeframe Dropdown Fix
+    document.getElementById('timeframe-select').addEventListener('change', function(e) {
+        const val = e.target.value;
+        if (val === '1W') marketChart.data.labels = ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Today'];
+        if (val === '1M') marketChart.data.labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'This Week'];
+        if (val === '1Y') marketChart.data.labels = ['Jan', 'Mar', 'May', 'Jul', 'Sep', 'Nov', 'Dec'];
+        
+        // Reload data to redraw the chart smoothly
+        loadMarketData(currentLoadedAsset); 
+    });
+
+    // 6. Run automatically on start
+    document.addEventListener('DOMContentLoaded', () => {
+        // Load Maize immediately into the main chart
+        loadMarketData('Maize');
+        
+        // Pre-load the ticker items in the background to make the tape look alive!
+        setTimeout(() => loadMarketData('Rice'), 2000);
+        setTimeout(() => loadMarketData('Sorghum'), 4000);
+        setTimeout(() => loadMarketData('Soybeans'), 6000);
+        setTimeout(() => loadMarketData('Maize'), 8000); // Leave focus on Maize
+    });
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<!-- <html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Live Market Terminal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; 
+            --accent: #2ecc71; --danger: #e74c3c; --warning: #f1c40f;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 30px 20px; overflow-x: hidden; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        /* Live Ticker Tape */
+        .ticker-wrap { width: 100%; background: rgba(123, 97, 255, 0.05); border-top: 1px solid rgba(123, 97, 255, 0.2); border-bottom: 1px solid rgba(123, 97, 255, 0.2); padding: 10px 0; overflow: hidden; margin-bottom: 30px; display: flex; align-items: center; }
+        .ticker-label { background: var(--primary); color: #fff; font-size: 11px; font-weight: 700; padding: 5px 15px; text-transform: uppercase; letter-spacing: 1px; z-index: 10; margin-right: 15px; border-radius: 0 10px 10px 0; }
+        .ticker-move { display: inline-flex; white-space: nowrap; animation: ticker 25s linear infinite; gap: 40px; }
+        .ticker-item { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; color: var(--muted); }
+        @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 25px; }
+        @media (min-width: 1000px) { .layout-grid { grid-template-columns: 1.5fr 1fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); height: fit-content; }
+
+        /* Main Chart Area */
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .asset-title { font-size: 24px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 10px; }
+        .current-price { font-size: 32px; font-weight: 800; color: var(--text); margin: 5px 0 0; }
+        .price-change { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 5px; color: var(--muted); }
+        .up { color: var(--accent); } .down { color: var(--danger); }
+        .chart-container { height: 300px; width: 100%; margin-top: 20px; }
+
+        /* Watchlist Items */
+        .watchlist-item { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 15px; transition: 0.3s; cursor: pointer; }
+        .watchlist-item:hover { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); }
+        .wl-name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+        .wl-vol { font-size: 11px; color: var(--muted); }
+        .wl-price { font-weight: 700; font-size: 16px; text-align: right; }
+        .wl-trend { font-size: 12px; font-weight: 600; margin-top: 4px; display: flex; align-items: center; justify-content: flex-end; gap: 4px; color: var(--muted); }
+
+        /* Arbitrage Table */
+        .arbitrage-table { width: 100%; border-collapse: collapse; margin-top: 25px; }
+        .arbitrage-table th { text-align: left; padding: 12px 15px; font-size: 11px; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border); }
+        .arbitrage-table td { padding: 15px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.02); font-weight: 500; }
+        .highlight-bid { color: var(--primary); font-weight: 700; background: rgba(123, 97, 255, 0.1); border-radius: 8px; padding: 4px 8px; }
+
+        /* Live Pulsing Dot */
+        .live-dot { width: 8px; height: 8px; background-color: var(--accent); border-radius: 50%; display: inline-block; box-shadow: 0 0 10px var(--accent); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.7; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.7; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/finance/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Finance Hub</a>
+            <h1 style="margin:0; font-size: 28px; font-weight: 600;">Commodity Market Terminal</h1>
+        </div>
+        <div style="text-align: right; background: rgba(255,255,255,0.03); padding: 10px 20px; border-radius: 12px; border: 1px solid var(--border);">
+            <div id="socket-status" style="font-size: 12px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
+                <span class="live-dot"></span> AWAITING API SYNC
+            </div>
+            <div id="api-source" style="font-size: 11px; color: var(--muted); margin-top: 4px;">Source: Standby</div>
+        </div>
+    </div>
+
+    <div class="ticker-wrap">
+        <div class="ticker-label">LATEST</div>
+        <div class="ticker-move">
+            <div class="ticker-item" id="tick-mz">Maize: Syncing...</div>
+            <div class="ticker-item" id="tick-rc">Rice: Syncing...</div>
+            <div class="ticker-item" id="tick-sg">Sorghum: Syncing...</div>
+            <div class="ticker-item" id="tick-sy">Soybeans: Syncing...</div>
+            <div class="ticker-item" id="tick-cs">Cassava: Syncing...</div>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <div class="glass-panel">
+            <div class="chart-header">
+                <div>
+                    <h2 class="asset-title" id="main-asset-name"><i class="fa-solid fa-wheat-awn" style="color:var(--primary);"></i> Select Asset</h2>
+                    <div class="current-price" id="main-price">₦--.00</div>
+                    <div class="price-change" id="main-change">Awaiting Market Data</div>
+                </div>
+                <div>
+                    <select id="timeframe-select" style="background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--border); padding: 8px 15px; border-radius: 8px; outline: none; font-family: inherit;">
+                        <option value="1W">1W (Weekly)</option>
+                        <option value="1M">1M (Monthly)</option>
+                        <option value="1Y">1Y (Yearly)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="marketChart"></canvas>
+            </div>
+
+            <h4 style="margin: 35px 0 15px; font-size: 14px; color: var(--primary);"><i class="fa-solid fa-map-location-dot"></i> Regional Arbitrage (Sell Opportunities)</h4>
+            <p style="font-size: 12px; color: var(--muted); margin-top: -10px;">Compare buyer prices across key markets to maximize profit margins.</p>
+            
+            <table class="arbitrage-table">
+                <thead>
+                    <tr>
+                        <th>Market Location</th>
+                        <th>Distance</th>
+                        <th>Current Bid (MT)</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="arbitrage-body">
+                    <tr>
+                        <td>Katsina Central Market</td>
+                        <td id="dist-kt">Syncing...</td>
+                        <td id="arb-kt">₦--</td>
+                        <td id="act-kt">Pending</td>
+                    </tr>
+                    <tr>
+                        <td>Dawanau Market, Kano</td>
+                        <td id="dist-kn">Syncing...</td>
+                        <td class="highlight-bid" id="arb-kn">₦--</td>
+                        <td id="act-kn">Pending</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-list" style="color:var(--primary); margin-right: 10px;"></i> Live Watchlist</h3>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 25px;">Real-time price feed per Metric Ton (MT).</p>
+
+            <div id="watchlist-container">
+                <div class="watchlist-item" id="wl-item-1">
+                    <div>
+                        <div class="wl-name" id="wl-name-1">Syncing Asset...</div>
+                        <div class="wl-vol" id="wl-vol-1">Vol: -- MT</div>
+                    </div>
+                    <div>
+                        <div class="wl-price" id="wl-price-1">₦--</div>
+                        <div class="wl-trend" id="wl-trend-1">--%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="btn-add-commodity" style="width: 100%; margin-top: 15px; padding: 15px; background: transparent; border: 1px dashed var(--primary); color: var(--primary); border-radius: 12px; font-family: inherit; font-weight: 600; cursor: pointer; transition: 0.3s;">
+                <i class="fa-solid fa-plus"></i> Track New Commodity
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // // 1. Initialize the Chart globally
+    // const ctx = document.getElementById('marketChart').getContext('2d');
+    // const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    // gradient.addColorStop(0, 'rgba(123, 97, 255, 0.4)');
+    // gradient.addColorStop(1, 'rgba(123, 97, 255, 0.0)');
+
+    // let marketChart = new Chart(ctx, {
+    //     type: 'line',
+    //     data: {
+    //         labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Today'],
+    //         datasets: [{
+    //             label: 'Price (NGN)',
+    //             data: [0, 0, 0, 0, 0, 0, 0], // Starts empty
+    //             borderColor: '#7b61ff', 
+    //             backgroundColor: gradient,
+    //             borderWidth: 3,
+    //             fill: true,
+    //             tension: 0.4,
+    //             pointBackgroundColor: '#07070a',
+    //             pointBorderColor: '#7b61ff',
+    //             pointRadius: 4,
+    //             pointHoverRadius: 6
+    //         }]
+    //     },
+    //     options: {
+    //         responsive: true, maintainAspectRatio: false,
+    //         scales: {
+    //             x: { ticks: { color: '#8b8b9a', font: {size: 11} }, grid: { display: false } },
+    //             y: { ticks: { color: '#8b8b9a', font: {size: 11} }, grid: { color: 'rgba(255,255,255,0.05)' } }
+    //         },
+    //         plugins: { legend: { display: false } }
+    //     }
+    // });
+
+    // // 2. Fetch data from Django -> Gemini API
+    // async function loadMarketData(assetName) {
+    //     // UI Loading States
+    //     document.getElementById('socket-status').innerHTML = '<span class="live-dot" style="background-color: var(--warning);"></span> AI SYNCING...';
+    //     document.getElementById('api-source').innerText = 'Source: Gemini Engine';
+    //     document.getElementById('main-asset-name').innerHTML = `<i class="fa-solid fa-wheat-awn" style="color:var(--primary);"></i> ${assetName}`;
+    //     document.getElementById('main-price').innerText = `Fetching...`;
+
+    //     try {
+    //         const response = await fetch(`/api/market-data/?asset=${assetName}`);
+    //         const result = await response.json();
+
+    //         if (result.status === 'success') {
+    //             const data = result.data;
+
+    //             // Update Main Price & Change
+    //             document.getElementById('main-price').innerText = `₦${data.current_price.toLocaleString()}`;
+                
+    //             const changeEl = document.getElementById('main-change');
+    //             if (data.price_change_percent >= 0) {
+    //                 changeEl.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> +${data.price_change_percent}%`;
+    //                 changeEl.className = 'price-change up';
+    //             } else {
+    //                 changeEl.innerHTML = `<i class="fa-solid fa-arrow-trend-down"></i> ${data.price_change_percent}%`;
+    //                 changeEl.className = 'price-change down';
+    //             }
+
+    //             // Update Arbitrage Table
+    //             document.getElementById('arb-kt').innerText = `₦${data.katsina_market_bid.toLocaleString()}`;
+    //             document.getElementById('act-kt').innerText = 'Hold';
+                
+    //             document.getElementById('arb-kn').innerText = `₦${data.kano_market_bid.toLocaleString()}`;
+    //             document.getElementById('act-kn').innerHTML = '<span class="highlight-bid">Sell Here</span>';
+
+    //             // Update Chart
+    //             marketChart.data.datasets[0].data = data.historical_7_days;
+    //             marketChart.update();
+
+    //             // Update Status to Live
+    //             document.getElementById('socket-status').innerHTML = '<span class="live-dot"></span> LIVE';
+                
+    //             // Update specific ticker if it exists
+    //             updateTicker(assetName, data.current_price);
+    //         } else {
+    //             console.error("API Error:", result.message);
+    //             document.getElementById('socket-status').innerHTML = '<span style="color: var(--danger);">SYNC FAILED</span>';
+    //         }
+    //     } catch (error) {
+    //         console.error("Network Error:", error);
+    //         document.getElementById('socket-status').innerHTML = '<span style="color: var(--danger);">DISCONNECTED</span>';
+    //     }
+    // }
+
+    // function updateTicker(assetName, price) {
+    //     // Quick helper to map names to your ticker IDs
+    //     const map = {'Maize': 'mz', 'Rice': 'rc', 'Sorghum': 'sg', 'Soybeans': 'sy'};
+    //     const id = map[assetName];
+    //     if (id) {
+    //         const el = document.getElementById(`tick-${id}`);
+    //         if(el) el.innerText = `${assetName}: ₦${price.toLocaleString()}`;
+    //     }
+    // }
+
+    // // 3. Load initial data on startup
+    // window.onload = () => {
+    //     loadMarketData('Maize');
+    // };
+
+    // // 4. Handle "Track New Commodity" Button
+    // const availableAssets = ['Rice', 'Sorghum', 'Soybeans', 'Maize'];
+    // let assetIndex = 0;
+    
+    // document.getElementById('btn-add-commodity').addEventListener('click', function() {
+    //     const nextAsset = availableAssets[assetIndex % availableAssets.length];
+        
+    //     // Add to Watchlist UI
+    //     const container = document.getElementById('watchlist-container');
+    //     const newItem = document.createElement('div');
+    //     newItem.className = 'watchlist-item animate__animated animate__fadeIn';
+    //     newItem.onclick = () => loadMarketData(nextAsset); // Make it clickable to load data
+    //     newItem.innerHTML = `
+    //         <div>
+    //             <div class="wl-name">${nextAsset}</div>
+    //             <div class="wl-vol">Loading...</div>
+    //         </div>
+    //         <div>
+    //             <div class="wl-price">Syncing</div>
+    //         </div>
+    //     `;
+    //     container.appendChild(newItem);
+        
+    //     // Load data for the new asset into the main terminal
+    //     loadMarketData(nextAsset);
+    //     assetIndex++;
+    // });
+
+
+async function loadMarketData(assetName) {
+    // 1. Target the EXACT HTML IDs from your layout
+    const priceDisplay = document.getElementById('main-price'); 
+    const nameDisplay = document.getElementById('main-asset-name');
+    const changeDisplay = document.getElementById('main-change');
+    const statusDisplay = document.getElementById('socket-status');
+    
+    // 2. Set UI to "Loading" mode
+    if (priceDisplay) priceDisplay.innerText = "Syncing..."; 
+    if (nameDisplay) nameDisplay.innerHTML = `<i class="fa-solid fa-wheat-awn" style="color:var(--primary);"></i> ${assetName}`;
+    if (changeDisplay) changeDisplay.innerText = "Awaiting Market Data...";
+    if (statusDisplay) statusDisplay.innerHTML = '<span class="live-dot" style="background-color: var(--warning);"></span> AI SYNCING...';
+    
+    try {
+        // 3. Request the data from your Django API
+        const response = await fetch(`/api/market-data/?asset=${assetName}`);
+        const result = await response.json();
+        
+        // 4. Update the UI with real data
+        if (result.status === 'success') {
+            if (priceDisplay) {
+                // Formats the number as currency (e.g. 450,000)
+                priceDisplay.innerText = `₦${Number(result.data.price).toLocaleString()}`;
+            }
+            if (changeDisplay) {
+                // Make it green if positive, red if negative
+                if (String(result.data.change).includes('-')) {
+                    changeDisplay.innerHTML = `<i class="fa-solid fa-arrow-trend-down"></i> ${result.data.change}`;
+                    changeDisplay.className = 'price-change down';
+                } else {
+                    changeDisplay.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> +${result.data.change}`;
+                    changeDisplay.className = 'price-change up';
+                }
+            }
+            if (statusDisplay) {
+                statusDisplay.innerHTML = '<span class="live-dot"></span> LIVE SYNCED';
+            }
+            console.log("Success! Data Loaded:", result.data);
+        } else {
+            if (priceDisplay) priceDisplay.innerText = "API Error";
+            if (statusDisplay) statusDisplay.innerHTML = '<span style="color: var(--danger);">SYNC FAILED</span>';
+            console.error("Backend Error:", result.message);
+        }
+    } catch (error) {
+        if (priceDisplay) priceDisplay.innerText = "Network Error";
+        if (statusDisplay) statusDisplay.innerHTML = '<span style="color: var(--danger);">DISCONNECTED</span>';
+        console.error("Network/Fetch error:", error);
+    }
+}
+
+// Automatically load data when the page opens
+document.addEventListener('DOMContentLoaded', () => {
+    loadMarketData('Maize');
+});
+</script>
+
+
+</body>
+</html> -->

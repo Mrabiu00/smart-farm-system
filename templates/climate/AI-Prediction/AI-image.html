@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | AI & Predictions</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+            --gap: 25px;
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 20px; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .header-section { margin-bottom: 40px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .ai-grid { display: grid; grid-template-columns: 1fr; gap: var(--gap); margin-top: 20px; }
+        @media (min-width: 850px) { .ai-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        .panel-link { text-decoration: none; color: inherit; display: block; height: 100%; }
+        
+        .ai-card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 24px;
+            padding: 30px; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative; overflow: hidden; height: 100%; box-sizing: border-box;
+        }
+        .panel-link:hover .ai-card { transform: translateY(-8px); border-color: var(--primary); box-shadow: 0 15px 35px rgba(123, 97, 255, 0.12); }
+
+        .icon-box { 
+            width: 55px; height: 55px; background: rgba(123, 97, 255, 0.08); 
+            border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; border: 1px solid rgba(123, 97, 255, 0.2);
+        }
+        .icon-box i { color: var(--primary); font-size: 24px; }
+
+        .status-pill { font-size: 10px; padding: 5px 12px; border-radius: 20px; background: rgba(255,255,255,0.04); color: var(--muted); float: right; letter-spacing: 0.5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-section">
+        <a href="/dashboard/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Return to Hub</a>
+        <h1 style="font-size: 28px; margin: 0; display: flex; align-items: center; gap: 12px;">
+            <i class="fa-solid fa-brain" style="color: var(--primary);"></i> AI & Predictive Features
+        </h1>
+        <p style="color: var(--muted); font-size: 14px; margin-top: 10px;">Diagnose diseases, analyze soil, and chat with your AI farm assistant.</p>
+    </div>
+
+    <div class="ai-grid">
+        <a href="/ai/vision/" class="panel-link">
+            <div class="ai-card">
+                <span class="status-pill">ID: ai_vision_diag</span>
+                <div class="icon-box"><i class="fa-solid fa-camera-viewfinder"></i></div>
+                <h3 style="margin: 0 0 10px;">AI Image Disease Diagnosis</h3>
+                <p style="color: var(--muted); font-size: 13px; line-height: 1.6;">Upload photos of crop leaves to identify diseases instantly using Computer Vision models.</p>
+            </div>
+        </a>
+
+        <a href="/ai/crop-recommend/" class="panel-link">
+            <div class="ai-card">
+                <span class="status-pill">ID: ai_crop_rec</span>
+                <div class="icon-box"><i class="fa-solid fa-leaf"></i></div>
+                <h3 style="margin: 0 0 10px;">Crop Recommendation System</h3>
+                <p style="color: var(--muted); font-size: 13px; line-height: 1.6;">Get data-driven suggestions for the best crops to plant based on current environmental metrics.</p>
+            </div>
+        </a>
+
+        <a href="/ai/soil/" class="panel-link">
+            <div class="ai-card">
+                <span class="status-pill">ID: ai_soil_fertility</span>
+                <div class="icon-box"><i class="fa-solid fa-flask"></i></div>
+                <h3 style="margin: 0 0 10px;">Soil Fertility Analyzer</h3>
+                <p style="color: var(--muted); font-size: 13px; line-height: 1.6;">Input NPK and pH values to analyze soil health and generate exact fertilizer mitigation plans.</p>
+            </div>
+        </a>
+
+        <a href="/ai/chat/" class="panel-link">
+            <div class="ai-card" style="border-style: dashed; background: rgba(123, 97, 255, 0.02);">
+                <span class="status-pill" style="color: var(--accent); background: rgba(46, 204, 113, 0.1);">ID: ai_farm_bot</span>
+                <div class="icon-box" style="background: rgba(46, 204, 113, 0.1); border-color: rgba(46, 204, 113, 0.3);"><i class="fa-solid fa-robot" style="color: var(--accent);"></i></div>
+                <h3 style="margin: 0 0 10px;">Agricultural Chatbot</h3>
+                <p style="color: var(--muted); font-size: 13px; line-height: 1.6;">Ask the AI assistant questions about farm management, weather, and best agricultural practices.</p>
+            </div>
+        </a>
+
+        <a href="/ai/suitability/" class="panel-link">
+            <div class="ai-card">
+                <span class="status-pill">ID: ai_crop_suitability</span>
+                <div class="icon-box"><i class="fa-solid fa-chart-pie"></i></div>
+                <h3 style="margin: 0 0 10px;">Crop Suitability Predictor</h3>
+                <p style="color: var(--muted); font-size: 13px; line-height: 1.6;">Forecast long-term crop survival rates based on historical climate shifts and land data.</p>
+            </div>
+        </a>
+
+        <a href="/ai/health/" class="panel-link">
+            <div class="ai-card">
+                <span class="status-pill">ID: sys_health</span>
+                <div class="icon-box"><i class="fa-solid fa-microchip"></i></div>
+                <h3 style="margin: 0 0 10px;">ML Model Health</h3>
+                <p style="color: var(--muted); font-size: 13px; line-height: 1.6;">Monitor the accuracy and confidence scoring of your backend machine learning algorithms.</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>

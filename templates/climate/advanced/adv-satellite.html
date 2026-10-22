@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Satellite Health (NDVI)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --danger: #e74c3c; --warning: #f1c40f;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 24px; overflow-x: hidden; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 950px) { .layout-grid { grid-template-columns: 1.5fr 1fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); height: fit-content; }
+
+        /* Map & Imagery Area */
+        .map-container { width: 100%; height: 350px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 16px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .map-overlay-text { color: var(--muted); font-size: 14px; margin-top: 15px; }
+        
+        .coordinate-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .coord-group label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+        .coord-group input { 
+            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); 
+            padding: 12px 15px; border-radius: 12px; color: white; outline: none; transition: 0.3s; box-sizing: border-box; font-family: inherit;
+        }
+        .coord-group input:focus { border-color: var(--primary); }
+
+        .btn-scan { 
+            width: 100%; background: linear-gradient(90deg, var(--primary), #5a44ff); color: white; border: none; 
+            padding: 16px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 20px;
+        }
+        .btn-scan:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(123, 97, 255, 0.25); }
+
+        /* Metrics & Analysis */
+        .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .metric-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+        .metric-label { font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 5px; }
+        .metric-val { font-size: 24px; font-weight: 700; color: var(--text); }
+        .metric-sub { font-size: 11px; color: var(--primary); margin-top: 5px; }
+
+        /* NDVI Legend */
+        .ndvi-legend { margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border); }
+        .legend-title { font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+        .legend-bar { width: 100%; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--danger) 0%, var(--warning) 40%, var(--accent) 80%, #1e8449 100%); margin-bottom: 8px; }
+        .legend-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); }
+
+        .chart-container { height: 180px; width: 100%; margin-top: 25px; }
+    </style>
+</head>
+<body>
+
+
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/advanced/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Advanced Hub</a>
+            <h1 style="margin:0; font-size: 28px; font-weight: 600;">Satellite Health (NDVI)</h1>
+        </div>
+        <div style="text-align: right;">
+            <div id="api-status" style="font-size: 12px; color: var(--primary);"><i class="fa-solid fa-satellite-dish"></i> Geospatial API Ready</div>
+            <div id="last-pass" style="font-size: 14px; color: var(--muted); margin-top: 5px;">Awaiting Coordinates...</div>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-map" style="color:var(--primary); margin-right: 10px;"></i> Sector Imagery</h3>
+            
+            <div class="map-container" id="map-render-target">
+                <i class="fa-solid fa-earth-africa" style="font-size: 48px; color: rgba(255,255,255,0.1);"></i>
+                <div class="map-overlay-text" id="map-status-text">Awaiting Leaflet/Mapbox Injection...</div>
+            </div>
+
+            <div class="coordinate-inputs">
+                <div class="coord-group">
+                    <label>Latitude</label>
+                    <input type="text" id="in-lat" placeholder="e.g. 12.9894">
+                </div>
+                <div class="coord-group">
+                    <label>Longitude</label>
+                    <input type="text" id="in-lng" placeholder="e.g. 7.6214">
+                </div>
+            </div>
+
+            <button class="btn-scan" id="btn-fetch-ndvi"><i class="fa-solid fa-satellite"></i> Fetch Latest Satellite Pass</button>
+        </div>
+
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-chart-simple" style="color:var(--accent); margin-right: 10px;"></i> Vegetation Analysis</h3>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Mean NDVI Score</div>
+                    <div class="metric-val" id="out-ndvi-score">0.00</div>
+                    <div class="metric-sub" id="out-ndvi-status">Status: Pending</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Cloud Cover</div>
+                    <div class="metric-val" id="out-cloud-cover">--%</div>
+                    <div class="metric-sub" id="out-image-quality">Quality: Pending</div>
+                </div>
+            </div>
+
+            <div class="ndvi-legend">
+                <div class="legend-title">NDVI Index Scale (-1.0 to 1.0)</div>
+                <div class="legend-bar"></div>
+                <div class="legend-labels">
+                    <span>Water/Dead</span>
+                    <span>Stressed</span>
+                    <span>Healthy</span>
+                    <span>Dense Canopy</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 25px;">
+                <h4 style="font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px;">30-Day Vigor Trend</h4>
+                <div class="chart-container">
+                    <canvas id="ndviTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Initialize the NDVI Trend Line Chart
+    const ctx = document.getElementById('ndviTrendChart').getContext('2d');
+    window.ndviChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            datasets: [{
+                label: 'NDVI Value',
+                data: [0, 0, 0, 0], 
+                borderColor: '#2ecc71',
+                backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#2ecc71'
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { ticks: { color: '#8b8b9a', font: {size: 10} }, grid: { display: false } },
+                y: { ticks: { color: '#8b8b9a', font: {size: 10} }, grid: { color: 'rgba(255,255,255,0.05)' }, min: -1, max: 1 }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // 2. The AJAX Fetch Engine & Map Injector
+    document.getElementById('btn-fetch-ndvi').addEventListener('click', async function() {
+        const btn = this;
+        const originalText = btn.innerHTML;
+
+        // Collect coordinates
+        const payload = {
+            lat: document.getElementById('in-lat').value || "12.9894", // Defaults to Katsina if empty
+            lng: document.getElementById('in-lng').value || "7.6214"
+        };
+
+        // UI Loading State
+        btn.innerHTML = '<i class="fa-solid fa-satellite fa-spin"></i> Aligning Satellite Orbit...';
+        btn.disabled = true;
+        document.getElementById('api-status').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Requesting API Telemetry...';
+
+        try {
+            const response = await fetch('/api/satellite-ndvi/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}' 
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                
+                // 1. INJECT REAL SATELLITE IMAGERY (Google Maps Satellite View)
+                const mapContainer = document.getElementById('map-render-target');
+                mapContainer.innerHTML = `
+                    <iframe 
+                        width="100%" height="100%" frameborder="0" 
+                        style="border:0; position:absolute; top:0; left:0; border-radius: 16px;" 
+                        src="https://maps.google.com/maps?q=${result.lat},${result.lng}&t=k&z=15&ie=UTF8&iwloc=&output=embed" 
+                        allowfullscreen>
+                    </iframe>
+                `;
+
+                // 2. Update Live Metrics (OpenWeatherMap + Gemini)
+                document.getElementById('out-ndvi-score').innerText = result.ndvi_score;
+                document.getElementById('out-ndvi-status').innerText = `Status: ${result.ndvi_status}`;
+                document.getElementById('out-cloud-cover').innerText = result.real_cloud_cover + "%";
+                document.getElementById('out-image-quality').innerText = `Quality: ${result.image_quality}`;
+
+                // 3. Animate the Chart
+                window.ndviChart.data.datasets[0].data = result.trend_data;
+                window.ndviChart.update();
+
+                // 4. Update Header
+                const time = new Date().toLocaleTimeString('en-US', { hour12: true });
+                document.getElementById('api-status').innerHTML = '<i class="fa-solid fa-check-circle"></i> Telemetry Synced';
+                document.getElementById('last-pass').innerText = `Last Pass: ${time}`;
+                
+            } else {
+                alert("API Error: " + result.message);
+                document.getElementById('api-status').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Network Failure';
+            }
+
+        } catch (error) {
+            console.error("Network Error:", error);
+            alert("Failed to connect to Django server.");
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+</script>
+
+</body>
+</html>

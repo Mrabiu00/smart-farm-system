@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkySense | Climate Trends</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #0b0b10;
+            --sidebar: #111118;
+            --card: #1a1a24;
+            --primary: #7b61ff;
+            --text: #ffffff;
+            --muted: #8b8b9a;
+            --border: rgba(255, 255, 255, 0.05);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background-color: var(--bg); color: var(--text); display: flex; min-height: 100vh; overflow-x: hidden; }
+        
+        /* Sidebar */
+        .sidebar { width: 80px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding: 30px 0; gap: 40px; }
+        .nav-item { color: var(--muted); font-size: 20px; cursor: pointer; transition: 0.3s; }
+        .nav-item.active { color: var(--primary); }
+
+        /* Main Content */
+        .main-content { flex: 1; padding: 30px; }
+        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        
+        .user-profile { display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 12px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; }
+
+        /* Grid */
+        .trend-grid { display: grid; grid-template-columns: 1fr; gap: 25px; }
+        @media (min-width: 1100px) { .trend-grid { grid-template-columns: 2fr 1fr; } }
+
+        .glass-panel { background: var(--card); border-radius: 28px; border: 1px solid var(--border); padding: 30px; }
+        
+        .badge-trend { background: rgba(123, 97, 255, 0.1); border: 1px solid var(--primary); color: var(--primary); padding: 6px 15px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+
+        /* Detail Boxes */
+        .comparison-box { background: rgba(255, 255, 255, 0.02); border-radius: 20px; border: 1px solid var(--border); padding: 20px; margin-top: 20px; }
+        .comp-header { color: var(--muted); font-size: 12px; text-transform: uppercase; margin-bottom: 10px; }
+        .comp-val { font-size: 22px; font-weight: 600; margin-bottom: 5px; }
+
+        .chart-box { margin-top: 30px; height: 350px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="nav-item"><i class="fa-solid fa-bolt"></i></div>
+        <div class="nav-item active"><i class="fa-solid fa-arrow-up-right-dots"></i></div>
+        <div class="nav-item"><i class="fa-solid fa-house" onclick="location.href='dashboard.html'"></i></div>
+        <div class="nav-item"><i class="fa-solid fa-gear"></i></div>
+    </div>
+
+    <div class="main-content">
+        <div class="header-box">
+            <h2 style="font-weight: 500; font-size: 20px;">Climate Trend Comparison</h2>
+            <div class="user-profile">
+                <span id="user-display" style="color: var(--muted);">{{ request.user.username|make_list|first|upper|default:"A" }}</span>
+                <div class="user-avatar" id="user-initial">?</div>
+            </div>
+        </div>
+
+        <div class="trend-grid">
+            <div class="glass-panel">
+                <div class="badge-trend"><i class="fa-solid fa-clock-rotate-left"></i> Multi-Year Analysis</div>
+                <div style="font-size: 24px; font-weight: 600; margin-top: 20px;" id="trend-title">Rainfall vs. Temperature Trends</div>
+                
+                <div class="chart-box">
+                    <canvas id="climateTrendChart"></canvas>
+                </div>
+            </div>
+
+            <div class="glass-panel">
+                <h3 style="margin: 0 0 20px; font-size: 18px; font-weight: 500;">Trend Highlights</h3>
+                
+                <div class="comparison-box">
+                    <div class="comp-header">Avg. Yearly Temperature Change</div>
+                    <div class="comp-val" id="temp-change-val">{{ temp_change }}</div>
+                    <div id="temp-status" style="font-size: 13px; color: var(--muted);">{{ temp_status }}</div>
+                </div>
+
+                <div class="comparison-box">
+                    <div class="comp-header">Annual Precipitation Shift</div>
+                    <div class="comp-val" id="rain-shift-val">--%</div>
+                    <div id="rain-status" style="font-size: 13px; color: var(--muted);">{{ rain_status }}</div>
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <h4 style="font-size: 14px; margin-bottom: 10px;">Select Comparison Period</h4>
+                    <select id="year-range" style="width: 100%; background: var(--bg); color: white; border: 1px solid var(--border); padding: 12px; border-radius: 12px; outline: none;">
+                        <option value="5">Last 5 Years</option>
+                        <option value="10">Last 10 Years</option>
+                        <option value="20">Last 20 Years</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+   <script>
+        // 1. Grab the JSON payload sent by Django
+        const allData = {{ climate_data_json|safe }};
+        
+        // 2. Initialize the chart with the default 5-year data
+        const ctx = document.getElementById('climateTrendChart').getContext('2d');
+        let myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: allData['5'].labels,
+                datasets: [
+                    {
+                        label: 'Rainfall (mm)',
+                        data: allData['5'].rain,
+                        borderColor: '#7b61ff',
+                        backgroundColor: 'rgba(123, 97, 255, 0.1)',
+                        fill: true, tension: 0.4
+                    },
+                    {
+                        label: 'Temperature (°C)',
+                        data: allData['5'].temp,
+                        borderColor: '#2ecc71',
+                        backgroundColor: 'transparent',
+                        borderDash: [5, 5],
+                        fill: false, tension: 0.4
+                    }
+                ]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { legend: { labels: { color: '#ffffff' } } }, 
+                scales: { 
+                    x: { ticks: { color: '#8b8b9a' }, grid: { display: false } }, 
+                    y: { ticks: { color: '#8b8b9a' }, grid: { color: 'rgba(255,255,255,0.05)' } } 
+                } 
+            }
+        });
+
+        // 3. The magic event listener for the dropdown
+        document.getElementById('year-range').addEventListener('change', function() {
+            const selectedYear = this.value; // Grabs '5', '10', or '20' from your HTML select
+            
+            // Swap out the data inside the chart object
+            myChart.data.labels = allData[selectedYear].labels;
+            myChart.data.datasets[0].data = allData[selectedYear].rain;
+            myChart.data.datasets[1].data = allData[selectedYear].temp;
+            
+            // Trigger the beautiful Chart.js animation
+            myChart.update(); 
+        });
+    </script>
+</body>
+</html>

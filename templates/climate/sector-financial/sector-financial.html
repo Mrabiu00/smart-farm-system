@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Financial & Market</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+            --gap: 25px; --finance: #f39c12;
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 20px; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .header-section { margin-bottom: 40px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .finance-grid { display: grid; grid-template-columns: 1fr; gap: var(--gap); margin-top: 20px; }
+        @media (min-width: 850px) { .finance-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        .panel-link { text-decoration: none; color: inherit; display: block; height: 100%; }
+        
+        .finance-card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 24px;
+            padding: 30px; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative; overflow: hidden; height: 100%; box-sizing: border-box;
+        }
+        .panel-link:hover .finance-card { transform: translateY(-8px); border-color: var(--finance); box-shadow: 0 15px 35px rgba(243, 156, 18, 0.12); }
+
+        .icon-box { 
+            width: 55px; height: 55px; background: rgba(243, 156, 18, 0.08); 
+            border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; border: 1px solid rgba(243, 156, 18, 0.2);
+        }
+        .icon-box i { color: var(--finance); font-size: 24px; }
+
+        .status-pill { font-size: 10px; padding: 5px 12px; border-radius: 20px; background: rgba(255,255,255,0.04); color: var(--muted); float: right; letter-spacing: 0.5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-section">
+        <a href="/dashboard/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Return to Hub</a>
+        <h1 style="font-size: 28px; margin: 0; display: flex; align-items: center; gap: 12px;">
+            <i class="fa-solid fa-naira-sign" style="color: var(--finance);"></i> Financial & Market
+        </h1>
+        <p style="color: var(--muted); font-size: 14px; margin-top: 10px;">Track real-time commodity prices, forecast market trends, and manage farm ROI.</p>
+    </div>
+
+    <div class="finance-grid">
+        <a href="/finance/market/" class="panel-link">
+            <div class="finance-card">
+                <span class="status-pill">ID: market_api_sync</span>
+                <div class="icon-box"><i class="fa-solid fa-chart-line"></i></div>
+                <h3 style="margin: 0 0 10px;">Live Market Prices</h3>
+                <p style="color: var(--muted); font-size: 13px; line-height: 1.6;">Track real-time buying and selling prices for crops across regional and national agricultural markets.</p>
+            </div>
+        </a>
+
+        <a href="/finance/ledger/" class="panel-link">
+            <div class="finance-card">
+                <span class="status-pill">ID: ledger_db</span>
+                <div class="icon-box"><i class="fa-solid fa-wallet"></i></div>
+                <h3 style="margin: 0 0 10px;">Revenue & Expense Ledger</h3>
+                <p style="color: var(--muted); font-size: 13px; line-height: 1.6;">Log farm expenditures against harvest revenue to calculate real-time net profit margins.</p>
+            </div>
+        </a>
+
+        <a href="/finance/forecast/" class="panel-link">
+            <div class="finance-card">
+                <span class="status-pill">ID: ml_price_forecast</span>
+                <div class="icon-box"><i class="fa-solid fa-money-bill-trend-up"></i></div>
+                <h3 style="margin: 0 0 10px;">Price Trend Forecaster</h3>
+                <p style="color: var(--muted); font-size: 13px; line-height: 1.6;">Use historical data and machine learning to predict whether crop prices will rise or fall by harvest time.</p>
+            </div>
+        </a>
+
+        <a href="/finance/roi/" class="panel-link">
+            <div class="finance-card">
+                <span class="status-pill">ID: roi_calculator</span>
+                <div class="icon-box"><i class="fa-solid fa-calculator"></i></div>
+                <h3 style="margin: 0 0 10px;">Budget & ROI Planner</h3>
+                <p style="color: var(--muted); font-size: 13px; line-height: 1.6;">Simulate the cost of seeds, fertilizer, and labor to calculate the expected Return on Investment before planting.</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>

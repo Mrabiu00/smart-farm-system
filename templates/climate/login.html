@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SmartFarm Authentication</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box;font-family:Poppins}
+body{margin:0;min-height:100vh;background:#07070a;display:flex;justify-content:center;align-items:center}
+.auth-box{width:100%;max-width:420px;padding:40px;background: #12121a;;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.35);color:#fff}
+.logo{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:25px}
+.logo span{font-size:28px;font-weight:600;background:linear-gradient(90deg,#7b61ff,#2ecc71);-webkit-background-clip:text;color:transparent}
+h2{text-align:center;margin-bottom:6px}
+.sub{text-align:center;color:#aaa;margin-bottom:25px;font-size:14px}
+input{width:100%;padding:14px;margin-bottom:14px;border-radius:12px;border:none;background:#1c1c22;color:#fff;font-size:14px}
+input::placeholder{color:#777}
+button.main-btn{width:100%;padding:14px;background:#7b61ff;border:none;border-radius:14px;font-size:15px;font-weight:600;color:#fff;cursor:pointer;margin-top:10px}
+button.main-btn:hover{opacity:.92}
+button.main-btn:disabled{opacity:.55;cursor:not-allowed}
+.switch{text-align:center;margin-top:18px;font-size:14px}
+.switch span{color:#7b61ff;cursor:pointer;font-weight:600}
+.social{display:flex;gap:15px;justify-content:center;margin-top:22px}
+.social button{width:55px;height:55px;border-radius:50%;border:none;background:#f4f6f8;color:#111;font-size:20px;cursor:pointer}
+.social button:hover{opacity:.9}
+.lang{display:flex;justify-content:center;gap:15px;margin-top:20px;font-size:13px}
+.lang span{cursor:pointer;color:#aaa}
+.lang span.active{color:#2ecc71}
+.hide{display:none}
+.forgot-wrap{display:flex;justify-content:flex-end;margin-top:-6px;margin-bottom:10px}
+.forgot-wrap span{color:#7b61ff;cursor:pointer;font-size:13px;font-weight:600}
+.note{margin-top:12px;color:#9aa0a6;font-size:12px;text-align:center;line-height:1.4}
+</style>
+</head>
+
+<body>
+<div class="auth-box">
+  <div class="logo">
+    <i class="fa-solid fa-seedling fa-2x" style="color:#2ecc71"></i>
+    <span>SmartFarm</span>
+  </div>
+
+  <h2 id="title">Welcome Back</h2>
+  <p class="sub" id="subtitle" style="color: rgb(68, 78, 87);">Sign in to continue</p>
+
+  <input type="text" id="name" placeholder="Full Name" class="hide">
+  <input type="text" id="emailPhone" placeholder="Email (phone login later)">
+  <input type="password" id="password" placeholder="Password" maxlength="15">
+
+  <div class="forgot-wrap" id="forgotWrap">
+    <span id="forgotBtn">Forgot password?</span>
+  </div>
+
+  <button class="main-btn" id="submitBtn">Sign In</button>
+
+  <div class="switch">
+    <span id="toggleText" style="color:#47515c;">Don’t have an account?</span>
+    <span id="toggleBtn">Sign Up</span>
+  </div>
+
+  <div class="social">
+    <button id="googleBtn" title="Google"><i class="fa-brands fa-google" style="color: red;"></i></button>
+    <button id="facebookBtn" title="Facebook"><i class="fa-brands fa-facebook-f" style="color:#1877f2;"></i></button>
+  </div>
+
+  <!-- <div class="note">
+    ✅ IMPORTANT: Google sign-in will NOT work on <b>file:///</b>.<br/>
+    Run a local server and open <b>http://localhost:...</b>
+  </div> -->
+
+  <div class="lang">
+    <span class="active" id="langEn">English</span>
+    <span id="langHa">Hausa</span>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+  import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
+    GoogleAuthProvider,
+    FacebookAuthProvider,
+    updateProfile,
+    sendEmailVerification,
+    sendPasswordResetEmail
+  } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCgXeXIybagT9q-riMCSzXsuY7xgoVKYtU",
+    authDomain: "smart-farm00.firebaseapp.com",
+    projectId: "smart-farm00",
+    storageBucket: "smart-farm00.firebasestorage.app",
+    messagingSenderId: "287777077332",
+    appId: "1:287777077332:web:046d6a83cb5c71ae8895c1",
+    measurementId: "G-5TTH12ZBVN"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  // UI state
+  let isSignup = false;
+  let currentLang = "en";
+
+  const title = document.getElementById("title");
+  const subtitle = document.getElementById("subtitle");
+  const nameField = document.getElementById("name");
+  const emailEl = document.getElementById("emailPhone");
+  const passEl = document.getElementById("password");
+
+  const btn = document.getElementById("submitBtn");
+  const toggleBtn = document.getElementById("toggleBtn");
+  const toggleText = document.getElementById("toggleText");
+
+  const googleBtn = document.getElementById("googleBtn");
+  const facebookBtn = document.getElementById("facebookBtn");
+  const forgotBtn = document.getElementById("forgotBtn");
+  const forgotWrap = document.getElementById("forgotWrap");
+
+  const translations = {
+    en: { title:"Welcome Back", sub:"Sign in to continue", signupTitle:"Create Account", signupSub:"Start smart farming today" },
+    ha: { title:"Barka da dawowa", sub:"Shiga domin ci gaba", signupTitle:"Ƙirƙiri Asusun", signupSub:"Fara noma mai kaifin basira" }
+  };
+
+  function isPhone(value){
+    const v = value.trim();
+    return v.startsWith("+") || /^[0-9]{8,}$/.test(v);
+  }
+
+  function applyLang(){
+    title.textContent = isSignup ? translations[currentLang].signupTitle : translations[currentLang].title;
+    subtitle.textContent = isSignup ? translations[currentLang].signupSub : translations[currentLang].sub;
+  }
+
+  function updateForgotVisibility(){
+    // Hide forgot password on Sign Up mode
+    forgotWrap.style.display = isSignup ? "none" : "flex";
+  }
+
+  function setLoading(isLoading){
+    btn.disabled = isLoading;
+    toggleBtn.style.pointerEvents = isLoading ? "none" : "auto";
+    googleBtn.disabled = isLoading;
+    facebookBtn.disabled = isLoading;
+    if(isLoading){
+      btn.textContent = isSignup ? "Creating..." : "Signing in...";
+    }else{
+      btn.textContent = isSignup ? "Create Account" : "Sign In";
+    }
+  }
+
+  async function routeAfterLogin(user){
+    await user.reload();
+    if(user.emailVerified){
+      // Your request: after successful login go dashboard
+      window.location.href = "/dashboard/";
+    }else{
+      window.location.href = "/verify-email/";
+    }
+  }
+
+  // Redirect result for mobile sign-in
+  getRedirectResult(auth).then(async (result) => {
+    if(result && result.user){
+      await routeAfterLogin(result.user);
+    }
+  }).catch(()=>{});
+
+  // Language clicks
+  document.getElementById("langEn").addEventListener("click", () => {
+    currentLang = "en";
+    document.getElementById("langEn").classList.add("active");
+    document.getElementById("langHa").classList.remove("active");
+    applyLang();
+  });
+  document.getElementById("langHa").addEventListener("click", () => {
+    currentLang = "ha";
+    document.getElementById("langHa").classList.add("active");
+    document.getElementById("langEn").classList.remove("active");
+    applyLang();
+  });
+
+  // Toggle signup/login
+  toggleBtn.addEventListener("click", () => {
+    isSignup = !isSignup;
+    nameField.classList.toggle("hide");
+    toggleBtn.textContent = isSignup ? "Sign In" : "Sign Up";
+    toggleText.textContent = isSignup ? "Already have an account?" : "Don’t have an account?";
+    applyLang();
+    updateForgotVisibility();
+  });
+
+  // Forgot password
+  forgotBtn.addEventListener("click", async () => {
+    const email = emailEl.value.trim();
+
+    if (!email || isPhone(email) || !email.includes("@") || !email.includes(".")) {
+      alert("Enter a valid email first (example: mrabiu@gmail.com).");
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      alert("✅ Reset email sent. Check Inbox/Spam/Promotions.");
+    } catch (e) {
+      if (e.code === "auth/user-not-found") {
+        alert("❌ No Email/Password account for this email. If you used Google login, use Google again.");
+      } else if (e.code === "auth/too-many-requests") {
+        alert("⚠️ Too many attempts. Wait and try again.");
+      } else if (e.code === "auth/operation-not-allowed") {
+        alert("❌ Enable Email/Password in Firebase Authentication → Sign-in method.");
+      } else {
+        alert(e.message);
+      }
+    }
+  });
+
+  // Email signup/login
+  btn.addEventListener("click", async () => {
+    const email = emailEl.value.trim();
+    const pass = passEl.value;
+    const fullName = nameField.value.trim();
+
+    if(!email || !pass){
+      alert("Please fill email and password.");
+      return;
+    }
+    if(isPhone(email)){
+      alert("Phone-only login is not enabled yet. Use email for now.");
+      return;
+    }
+
+    setLoading(true);
+
+    try{
+      if(isSignup){
+        const cred = await createUserWithEmailAndPassword(auth, email, pass);
+
+        if(fullName){
+          await updateProfile(cred.user, { displayName: fullName });
+        }
+
+        await sendEmailVerification(cred.user);
+
+        alert("✅ Account created! Verification email sent. Check Inbox/Spam.");
+        window.location.href = "/verify-email/";
+      }else{
+        const cred = await signInWithEmailAndPassword(auth, email, pass);
+        await routeAfterLogin(cred.user);
+      }
+    }catch(e){
+      if(e.code === "auth/email-already-in-use"){
+        alert("This email already has an account. Switch to Sign In.");
+      } else if(e.code === "auth/user-not-found"){
+        alert("No account found. Switch to Sign Up.");
+      } else if(e.code === "auth/wrong-password"){
+        alert("Wrong password. Try again or use Forgot password.");
+      } else if(e.code === "auth/too-many-requests"){
+        alert("Too many attempts. Wait a bit and try again.");
+      } else {
+        alert(e.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  // Google sign-in
+  googleBtn.addEventListener("click", async () => {
+    try{
+      const provider = new GoogleAuthProvider();
+      if(isMobile){
+        await signInWithRedirect(auth, provider);
+      } else {
+        const res = await signInWithPopup(auth, provider);
+        await routeAfterLogin(res.user);
+      }
+    }catch(e){
+      alert(e.message);
+    }
+  });
+
+  // Facebook sign-in
+  facebookBtn.addEventListener("click", async () => {
+    try{
+      const provider = new FacebookAuthProvider();
+      if(isMobile){
+        await signInWithRedirect(auth, provider);
+      } else {
+        const res = await signInWithPopup(auth, provider);
+        await routeAfterLogin(res.user);
+      }
+    }catch(e){
+      alert(e.message);
+    }
+  });
+
+  // Init
+  applyLang();
+  updateForgotVisibility();
+</script>
+</body>
+</html>

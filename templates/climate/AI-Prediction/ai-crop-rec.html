@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Crop Recommendation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --warning: #f1c40f; --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 24px; overflow-x: hidden; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 950px) { .layout-grid { grid-template-columns: 1fr 1.2fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); height: fit-content; }
+
+        /* Input Grid */
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .input-group label { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+        .input-group input { 
+            width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); 
+            padding: 12px 15px; border-radius: 12px; color: white; outline: none; transition: 0.3s; box-sizing: border-box;
+        }
+        .input-group input:focus { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); }
+
+        .btn-predict { 
+            width: 100%; background: linear-gradient(90deg, var(--primary), #5a44ff); color: white; border: none; 
+            padding: 18px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.3s;
+        }
+        .btn-predict:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(123, 97, 255, 0.25); }
+
+        /* Recommendation Display */
+        .primary-rec { text-align: center; padding: 30px; background: rgba(46, 204, 113, 0.05); border: 1px solid rgba(46, 204, 113, 0.2); border-radius: 20px; margin-bottom: 25px; position: relative; }
+        .rec-label { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; font-weight: 600; }
+        .rec-crop { font-size: 42px; font-weight: 800; color: #fff; margin: 0 0 10px; letter-spacing: 1px; }
+        .confidence-pill { display: inline-block; background: var(--accent); color: #000; font-size: 12px; font-weight: 700; padding: 5px 15px; border-radius: 20px; }
+
+        .alt-list { margin-top: 20px; }
+        .alt-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 10px; }
+        .alt-crop { font-weight: 600; font-size: 15px; }
+        .alt-score { color: var(--muted); font-size: 13px; }
+
+        .chart-box { height: 220px; width: 100%; margin-top: 30px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/ai/image-main/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to AI Hub</a>
+            <h1 style="margin:0; font-size: 28px; font-weight: 600;">Crop Recommendation System</h1>
+        </div>
+        <div style="text-align: right;">
+            <div id="ml-engine-status" style="font-size: 12px; color: var(--primary);"><i class="fa-solid fa-network-wired"></i> ML Model Ready</div>
+            <div id="data-source-sync" style="font-size: 14px; color: var(--muted); margin-top: 5px;">Awaiting Input Vectors...</div>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-sliders" style="color:var(--primary); margin-right: 10px;"></i> Data Parameters</h3>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 25px;">Input soil and climate parameters to query the recommendation algorithm.</p>
+            
+            <div class="input-grid">
+                <div class="input-group">
+                    <label>Nitrogen (N) Ratio</label>
+                    <input type="number" id="in-n" placeholder="e.g. 90">
+                </div>
+                <div class="input-group">
+                    <label>Phosphorus (P) Ratio</label>
+                    <input type="number" id="in-p" placeholder="e.g. 42">
+                </div>
+                <div class="input-group">
+                    <label>Potassium (K) Ratio</label>
+                    <input type="number" id="in-k" placeholder="e.g. 43">
+                </div>
+                <div class="input-group">
+                    <label>Soil pH Level</label>
+                    <input type="number" step="0.1" id="in-ph" placeholder="e.g. 6.5">
+                </div>
+                <div class="input-group">
+                    <label>Avg Temperature (°C)</label>
+                    <input type="number" step="0.1" id="in-temp" placeholder="e.g. 28.5">
+                </div>
+                <div class="input-group">
+                    <label>Humidity (%)</label>
+                    <input type="number" step="0.1" id="in-humid" placeholder="e.g. 82.0">
+                </div>
+                <div class="input-group" style="grid-column: span 2;">
+                    <label>Expected Rainfall (mm)</label>
+                    <input type="number" step="0.1" id="in-rain" placeholder="e.g. 200.5">
+                </div>
+            </div>
+
+            <button class="btn-predict" id="trigger-recommendation">Generate Recommendation</button>
+        </div>
+
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-leaf" style="color:var(--accent); margin-right: 10px;"></i> System Output</h3>
+            
+            <div class="primary-rec">
+                <div class="rec-label">Optimal Crop Match</div>
+                <div class="rec-crop" id="out-best-crop">Awaiting Data</div>
+                <div class="confidence-pill" id="out-confidence">--% Probability</div>
+            </div>
+
+            <h4 style="font-size: 13px; color: var(--muted); margin-bottom: 10px; text-transform: uppercase;">Alternative Viable Crops</h4>
+            <div class="alt-list" id="alt-crop-container">
+                <div class="alt-item">
+                    <span class="alt-crop" id="alt-1-name">--</span>
+                    <span class="alt-score" id="alt-1-score">--% match</span>
+                </div>
+                <div class="alt-item">
+                    <span class="alt-crop" id="alt-2-name">--</span>
+                    <span class="alt-score" id="alt-2-score">--% match</span>
+                </div>
+            </div>
+
+            <div class="chart-box">
+                <canvas id="suitabilityRadar"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    // 1. Initialize the Radar Chart globally so it can be updated later
+    const ctx = document.getElementById('suitabilityRadar').getContext('2d');
+    window.radarChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Nitrogen', 'Phosphorus', 'Potassium', 'Temp', 'Humidity', 'pH', 'Rainfall'],
+            datasets: [{
+                label: 'Parameter Match Alignment',
+                data: [0, 0, 0, 0, 0, 0, 0], // Default zero state
+                backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                borderColor: '#2ecc71',
+                pointBackgroundColor: '#7b61ff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                r: { angleLines: { color: 'rgba(255,255,255,0.1)' }, grid: { color: 'rgba(255,255,255,0.1)' }, pointLabels: { color: '#8b8b9a', font: {size: 10} }, ticks: { display: false } }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // 2. The AJAX Engine
+    document.getElementById('trigger-recommendation').addEventListener('click', async function() {
+        const btn = this;
+        const originalText = btn.innerText;
+
+        // Collect the 7 input vectors
+        const payload = {
+            n: document.getElementById('in-n').value,
+            p: document.getElementById('in-p').value,
+            k: document.getElementById('in-k').value,
+            ph: document.getElementById('in-ph').value,
+            temp: document.getElementById('in-temp').value,
+            humid: document.getElementById('in-humid').value,
+            rain: document.getElementById('in-rain').value
+        };
+
+        // Basic validation
+        if (!payload.n || !payload.p || !payload.k || !payload.ph || !payload.temp || !payload.humid || !payload.rain) {
+            alert("Please fill in all environmental parameters.");
+            return;
+        }
+
+        // Set Loading State
+        btn.innerText = "Analyzing Vectors...";
+        document.getElementById('ml-engine-status').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+        document.getElementById('data-source-sync').innerText = "Running heuristic classification...";
+
+        try {
+            // Send POST request to Django Backend
+            const response = await fetch('/api/predict-crop/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}' // Django security token
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                // Update Primary UI
+                document.getElementById('out-best-crop').innerText = result.best_crop;
+                document.getElementById('out-confidence').innerText = result.confidence + "% Probability";
+                
+                // Update Alternative Crops
+                document.getElementById('alt-1-name').innerText = result.alt1_name;
+                document.getElementById('alt-1-score').innerText = result.alt1_score + "% match";
+                document.getElementById('alt-2-name').innerText = result.alt2_name;
+                document.getElementById('alt-2-score').innerText = result.alt2_score + "% match";
+
+                // Animate the Radar Chart with new data array
+                window.radarChart.data.datasets[0].data = result.radar_data;
+                window.radarChart.update();
+
+                // Update Status UI
+                document.getElementById('ml-engine-status').innerHTML = '<i class="fa-solid fa-check-circle"></i> Model Complete';
+                document.getElementById('data-source-sync').innerText = "Classification successful.";
+            } else {
+                console.error("Backend Error:", result.message);
+                document.getElementById('data-source-sync').innerText = "Error calculating parameters.";
+            }
+
+        } catch (error) {
+            console.error("Network Error:", error);
+            document.getElementById('data-source-sync').innerText = "Network connection failed.";
+        } finally {
+            // Reset Button
+            btn.innerText = originalText;
+        }
+    });
+</script>
+
+</body>
+</html>

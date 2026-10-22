@@ -1,0 +1,458 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Automated Reports</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --danger: #e74c3c; --warning: #f1c40f; --info: #3498db;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 24px; overflow-x: hidden; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 950px) { .layout-grid { grid-template-columns: 1fr 1.3fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); height: fit-content; }
+
+        /* Report Builder Form */
+        .form-group { margin-bottom: 22px; }
+        .form-group label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1.2px; }
+        .form-group input[type="date"], .form-group select { 
+            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); 
+            padding: 15px; border-radius: 14px; color: white; outline: none; transition: 0.3s; box-sizing: border-box; font-family: inherit;
+        }
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); }
+
+        .date-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        /* Custom Checkboxes */
+        .check-group { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; }
+        .check-item { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.02); padding: 12px 15px; border-radius: 12px; border: 1px solid var(--border); cursor: pointer; transition: 0.3s; }
+        .check-item:hover { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); }
+        .check-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+        .check-label { font-size: 13px; font-weight: 500; color: var(--text); }
+
+        .btn-generate { 
+            width: 100%; background: linear-gradient(90deg, var(--primary), #5a44ff); color: white; border: none; 
+            padding: 18px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 25px; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-generate:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(123, 97, 255, 0.25); }
+
+        /* Report Archive List */
+        .archive-list { margin-top: 20px; max-height: 450px; overflow-y: auto; padding-right: 10px; }
+        .archive-list::-webkit-scrollbar { width: 6px; }
+        .archive-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        
+        .report-item { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 15px; transition: 0.3s; }
+        .report-item:hover { border-color: var(--primary); }
+        
+        .report-icon { width: 45px; height: 45px; border-radius: 12px; background: rgba(231, 76, 60, 0.1); color: var(--danger); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-right: 15px; flex-shrink: 0; border: 1px solid rgba(231, 76, 60, 0.2); }
+        .report-info { flex: 1; }
+        .report-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; color: var(--text); }
+        .report-meta { font-size: 11px; color: var(--muted); display: flex; gap: 15px; }
+        
+        .btn-download { background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); padding: 10px 15px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; font-family: inherit; }
+        .btn-download:hover { background: var(--primary); border-color: var(--primary); color: white; }
+
+        /* Generation Progress UI */
+        .progress-container { display: none; margin-top: 20px; padding: 20px; background: rgba(123, 97, 255, 0.05); border: 1px dashed var(--primary); border-radius: 16px; text-align: center; }
+        .progress-bar-wrap { width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden; margin: 15px 0 10px; }
+        .progress-fill { height: 100%; width: 0%; background: var(--primary); border-radius: 10px; transition: width 0.4s ease; }
+        .progress-text { font-size: 11px; color: var(--primary); font-weight: 600; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/advanced/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Advanced Hub</a>
+            <h1 style="margin:0; font-size: 28px; font-weight: 600;">Automated Reports</h1>
+        </div>
+        <div style="text-align: right;">
+            <div id="engine-status" style="font-size: 12px; color: var(--danger);"><i class="fa-solid fa-file-pdf"></i> PDF Engine Ready</div>
+            <div style="font-size: 14px; color: var(--muted); margin-top: 5px;">Data Compilation Services</div>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-gears" style="color:var(--primary); margin-right: 10px;"></i> Report Builder</h3>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 25px;">Select the parameters and data sectors to include in the generated document.</p>
+            
+            <div class="form-group date-grid">
+                <div>
+                    <label>Start Date</label>
+                    <input type="date" id="rep-start-date">
+                </div>
+                <div>
+                    <label>End Date</label>
+                    <input type="date" id="rep-end-date">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 25px;">
+                <label>Data Sectors to Include</label>
+                <div class="check-group">
+                    <label class="check-item">
+                        <input type="checkbox" id="chk-finance" value="finance" class="module-check" checked>
+                        <span class="check-label"><i class="fa-solid fa-wallet" style="color:var(--warning); width: 20px;"></i> Financial Ledger & ROI</span>
+                    </label>
+                    <label class="check-item">
+                        <input type="checkbox" id="chk-ai" value="ai" class="module-check" checked>
+                        <span class="check-label"><i class="fa-solid fa-brain" style="color:var(--primary); width: 20px;"></i> AI Predictions & Diagnostics</span>
+                    </label>
+                    <label class="check-item">
+                        <input type="checkbox" id="chk-agronomy" value="agronomy" class="module-check" checked>
+                        <span class="check-label"><i class="fa-solid fa-leaf" style="color:var(--accent); width: 20px;"></i> Agronomy & Soil Metrics</span>
+                    </label>
+                    <label class="check-item">
+                        <input type="checkbox" id="chk-weather" value="weather" class="module-check">
+                        <span class="check-label"><i class="fa-solid fa-cloud-sun" style="color:var(--info); width: 20px;"></i> Weather & Climate Logs</span>
+                    </label>
+                </div>
+            </div>
+
+            <button class="btn-generate" id="btn-generate-report"><i class="fa-solid fa-file-export"></i> Compile & Generate PDF</button>
+
+            <div class="progress-container" id="generation-progress">
+                <div class="progress-text" id="progress-status">Querying Database...</div>
+                <div class="progress-bar-wrap">
+                    <div class="progress-fill" id="progress-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-folder-open" style="color:var(--accent); margin-right: 10px;"></i> Report Archive</h3>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Access previously compiled reports stored securely on your server.</p>
+
+            <div class="archive-list" id="report-archive-container">
+                <!-- Dynamically generated reports will appear here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Store generated reports in memory for the session
+    let reportArchive = [
+        { id: '1001', title: 'Q2 Agronomy Overview', date: '2025-10-10', size: '1,450 KB', url: '#' }
+    ];
+
+    function renderArchive() {
+        const container = document.getElementById('report-archive-container');
+        container.innerHTML = ''; // Clear container
+        
+        if (reportArchive.length === 0) {
+            container.innerHTML = '<div style="color: var(--muted); font-size: 13px; text-align: center; padding: 20px;">No reports generated yet.</div>';
+            return;
+        }
+
+        // Loop through the array backwards (newest first) and generate HTML
+        reportArchive.slice().reverse().forEach(report => {
+            const item = document.createElement('div');
+            item.className = 'report-item';
+            item.innerHTML = `
+                <div style="display: flex; align-items: center; flex: 1;">
+                    <div class="report-icon"><i class="fa-solid fa-file-pdf"></i></div>
+                    <div class="report-info">
+                        <div class="report-title">${report.title}</div>
+                        <div class="report-meta">
+                            <span><i class="fa-regular fa-calendar"></i> ${report.date}</span>
+                            <span><i class="fa-solid fa-hard-drive"></i> ${report.size}</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-download" onclick="alert('Downloading: ${report.title}')">
+                    <i class="fa-solid fa-download"></i> Download
+                </button>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    // Render the initial list on load
+    renderArchive();
+
+    // Frontend interaction logic for connecting to Django
+    const btnGenerate = document.getElementById('btn-generate-report');
+    const progressContainer = document.getElementById('generation-progress');
+    const progressBar = document.getElementById('progress-bar');
+    const progressStatus = document.getElementById('progress-status');
+
+    btnGenerate.addEventListener('click', async () => {
+        // Get Form Values
+        const startDate = document.getElementById('rep-start-date').value;
+        const endDate = document.getElementById('rep-end-date').value;
+        
+        // Get Checked Modules
+        const selectedModules = [];
+        document.querySelectorAll('.module-check:checked').forEach(checkbox => {
+            selectedModules.push(checkbox.value);
+        });
+
+        if(selectedModules.length === 0) {
+            alert("Please select at least one Data Sector to generate a report.");
+            return;
+        }
+
+        // Disable button & show progress UI
+        btnGenerate.style.display = 'none';
+        progressContainer.style.display = 'block';
+        
+        // Stage 1: UI Animation
+        setTimeout(() => { progressBar.style.width = '40%'; progressStatus.innerText = 'Compiling Database Queries...'; }, 200);
+        setTimeout(() => { progressBar.style.width = '70%'; progressStatus.innerText = 'Generating PDF Format...'; }, 1000);
+
+        try {
+            // Real fetch request to your Django Backend
+            const response = await fetch('/api/generate-report/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    startDate: startDate, 
+                    endDate: endDate, 
+                    modules: selectedModules 
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                // Stage 2: Completion Animation
+                progressBar.style.width = '100%'; 
+                progressStatus.innerText = 'PDF Ready!';
+                
+                // Add the new report to our array and re-render the list
+                reportArchive.push(result.report);
+                renderArchive();
+            } else {
+                alert("Server error: " + result.message);
+            }
+        } catch (error) {
+            console.error("API Error:", error);
+            alert("Network connection failed.");
+        } finally {
+            // Stage 3: Reset UI
+            setTimeout(() => {
+                progressContainer.style.display = 'none';
+                btnGenerate.style.display = 'flex';
+                progressBar.style.width = '0%';
+            }, 1200);
+        }
+    });
+</script>
+
+</body>
+</html> 
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Automated Reports</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --danger: #e74c3c; --warning: #f1c40f; --info: #3498db;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 24px; overflow-x: hidden; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 950px) { .layout-grid { grid-template-columns: 1fr 1.3fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); height: fit-content; }
+
+        /* Report Builder Form */
+        .form-group { margin-bottom: 22px; }
+        .form-group label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1.2px; }
+        .form-group input[type="date"], .form-group select { 
+            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); 
+            padding: 15px; border-radius: 14px; color: white; outline: none; transition: 0.3s; box-sizing: border-box; font-family: inherit;
+        }
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); }
+
+        .date-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        /* Custom Checkboxes */
+        .check-group { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; }
+        .check-item { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.02); padding: 12px 15px; border-radius: 12px; border: 1px solid var(--border); cursor: pointer; transition: 0.3s; }
+        .check-item:hover { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); }
+        .check-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+        .check-label { font-size: 13px; font-weight: 500; color: var(--text); }
+
+        .btn-generate { 
+            width: 100%; background: linear-gradient(90deg, var(--primary), #5a44ff); color: white; border: none; 
+            padding: 18px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 25px; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-generate:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(123, 97, 255, 0.25); }
+
+        /* Report Archive List */
+        .archive-list { margin-top: 20px; max-height: 450px; overflow-y: auto; padding-right: 10px; }
+        .archive-list::-webkit-scrollbar { width: 6px; }
+        .archive-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        
+        .report-item { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 15px; transition: 0.3s; }
+        .report-item:hover { border-color: var(--primary); }
+        
+        .report-icon { width: 45px; height: 45px; border-radius: 12px; background: rgba(231, 76, 60, 0.1); color: var(--danger); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-right: 15px; flex-shrink: 0; border: 1px solid rgba(231, 76, 60, 0.2); }
+        .report-info { flex: 1; }
+        .report-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; color: var(--text); }
+        .report-meta { font-size: 11px; color: var(--muted); display: flex; gap: 15px; }
+        
+        .btn-download { background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); padding: 10px 15px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; font-family: inherit; }
+        .btn-download:hover { background: var(--primary); border-color: var(--primary); color: white; }
+
+        /* Generation Progress UI */
+        .progress-container { display: none; margin-top: 20px; padding: 20px; background: rgba(123, 97, 255, 0.05); border: 1px dashed var(--primary); border-radius: 16px; text-align: center; }
+        .progress-bar-wrap { width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden; margin: 15px 0 10px; }
+        .progress-fill { height: 100%; width: 0%; background: var(--primary); border-radius: 10px; transition: width 0.4s ease; }
+        .progress-text { font-size: 11px; color: var(--primary); font-weight: 600; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/advanced/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Advanced Hub</a>
+            <h1 style="margin:0; font-size: 28px; font-weight: 600;">Automated Reports</h1>
+        </div>
+        <div style="text-align: right;">
+            <div id="engine-status" style="font-size: 12px; color: var(--danger);"><i class="fa-solid fa-file-pdf"></i> PDF Engine Ready</div>
+            <div style="font-size: 14px; color: var(--muted); margin-top: 5px;">Data Compilation Services</div>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-gears" style="color:var(--primary); margin-right: 10px;"></i> Report Builder</h3>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 25px;">Select the parameters and data sectors to include in the generated document.</p>
+            
+            <div class="form-group date-grid">
+                <div>
+                    <label>Start Date</label>
+                    <input type="date" id="rep-start-date">
+                </div>
+                <div>
+                    <label>End Date</label>
+                    <input type="date" id="rep-end-date">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 25px;">
+                <label>Data Sectors to Include</label>
+                <div class="check-group">
+                    <label class="check-item">
+                        <input type="checkbox" id="chk-finance" checked>
+                        <span class="check-label"><i class="fa-solid fa-wallet" style="color:var(--warning); width: 20px;"></i> Financial Ledger & ROI</span>
+                    </label>
+                    <label class="check-item">
+                        <input type="checkbox" id="chk-ai" checked>
+                        <span class="check-label"><i class="fa-solid fa-brain" style="color:var(--primary); width: 20px;"></i> AI Predictions & Diagnostics</span>
+                    </label>
+                    <label class="check-item">
+                        <input type="checkbox" id="chk-agronomy" checked>
+                        <span class="check-label"><i class="fa-solid fa-leaf" style="color:var(--accent); width: 20px;"></i> Agronomy & Soil Metrics</span>
+                    </label>
+                    <label class="check-item">
+                        <input type="checkbox" id="chk-weather">
+                        <span class="check-label"><i class="fa-solid fa-cloud-sun" style="color:var(--info); width: 20px;"></i> Weather & Climate Logs</span>
+                    </label>
+                </div>
+            </div>
+
+            <button class="btn-generate" id="btn-generate-report"><i class="fa-solid fa-file-export"></i> Compile & Generate PDF</button>
+
+            <div class="progress-container" id="generation-progress">
+                <div class="progress-text" id="progress-status">Querying Database...</div>
+                <div class="progress-bar-wrap">
+                    <div class="progress-fill" id="progress-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-folder-open" style="color:var(--accent); margin-right: 10px;"></i> Report Archive</h3>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Access previously compiled reports stored securely on your server.</p>
+
+            <div class="archive-list" id="report-archive-container">
+                
+                <div class="report-item" id="rep-skeleton-1">
+                    <div class="report-icon"><i class="fa-solid fa-file-pdf"></i></div>
+                    <div class="report-info">
+                        <div class="report-title" id="arch-title-1">Fetching Archive...</div>
+                        <div class="report-meta">
+                            <span id="arch-date-1"><i class="fa-regular fa-calendar"></i> --/--/----</span>
+                            <span id="arch-size-1"><i class="fa-solid fa-hard-drive"></i> -- KB</span>
+                        </div>
+                    </div>
+                    <button class="btn-download" disabled><i class="fa-solid fa-download"></i></button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // BACKEND DEVELOPER INTERFACE
+    // Input IDs: rep-start-date, rep-end-date, chk-finance, chk-ai, chk-agronomy, chk-weather, btn-generate-report
+    // Output Target IDs: report-archive-container
+
+    // Frontend interaction logic for developer preview
+    const btnGenerate = document.getElementById('btn-generate-report');
+    const progressContainer = document.getElementById('generation-progress');
+    const progressBar = document.getElementById('progress-bar');
+    const progressStatus = document.getElementById('progress-status');
+
+    btnGenerate.addEventListener('click', () => {
+        // Disable button
+        btnGenerate.style.display = 'none';
+        progressContainer.style.display = 'block';
+        
+        // Simulate backend PDF generation stages
+        setTimeout(() => { progressBar.style.width = '30%'; progressStatus.innerText = 'Compiling Financial Data...'; }, 500);
+        setTimeout(() => { progressBar.style.width = '60%'; progressStatus.innerText = 'Structuring AI Metrics...'; }, 1500);
+        setTimeout(() => { progressBar.style.width = '90%'; progressStatus.innerText = 'Rendering PDF Layout...'; }, 2500);
+        
+        setTimeout(() => { 
+            progressBar.style.width = '100%'; 
+            progressStatus.innerText = 'Complete!';
+            
+            // Reset after simulation
+            setTimeout(() => {
+                progressContainer.style.display = 'none';
+                btnGenerate.style.display = 'flex';
+                progressBar.style.width = '0%';
+                console.log("PDF Generation complete. Backend should return a file blob or URL.");
+            }, 1000);
+        }, 3200);
+    });
+</script>
+
+</body>
+</html> -->

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Create Profile</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>
+body{background:#f4f6f8;color:black;font-family:Poppins;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;}
+.box{background:#fff;padding:30px 40px;border-radius:18px;width:90%;max-width:500px;}
+h2{text-align:center;margin-bottom:20px;}
+input,select,button{width:100%;padding:14px;border-radius:14px;border:none;margin-top:12px;}
+input,select{background:#f4f6f8;color:black;}
+button{background:#7b61ff;color:#fff;font-weight:600;cursor:pointer;}
+.lang-toggle{text-align:center;margin-bottom:15px;}
+.lang-toggle button{width:auto;padding:6px 12px;margin:0 5px;border-radius:8px;border:none;font-weight:600;background:#333;color:#fff;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="box">
+<div class="lang-toggle">
+  <button onclick="setLang('en')">English</button>
+  <button onclick="setLang('ha')">Hausa</button>
+</div>
+
+<h2 id="title">Complete Your Profile</h2>
+
+<input id="fullName" placeholder="Full Name">
+<input id="farmName" placeholder="Farm Name">
+
+<input id="farmSize" placeholder="Farm Size (in hectares)">
+
+
+<select id="country">
+  <option value="">Select Country</option>
+  <option value="Nigeria">Nigeria</option>
+</select>
+
+<select id="state">
+  <option value="">Select State</option>
+</select>
+
+<select id="lga">
+  <option value="">Select Local Government</option>
+</select>
+
+
+<select id="crop">
+  <option value="">Select Main Crop</option>
+</select>
+
+<button onclick="finish()">Continue</button>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+  // Your Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyCgXeXIybagT9q-riMCSzXsuY7xgoVKYtU",
+    authDomain: "smart-farm00.firebaseapp.com",
+    databaseURL: "https://smart-farm00-default-rtdb.firebaseio.com",
+    projectId: "smart-farm00",
+    storageBucket: "smart-farm00.firebasestorage.app",
+    messagingSenderId: "287777077332",
+    appId: "1:287777077332:web:046d6a83cb5c71ae8895c1",
+    measurementId: "G-5TTH12ZBVN"
+  };
+
+  // Initialize Firebase (Compat version)
+  if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+  }
+</script>
+
+<script>
+// ----- LANGUAGE TEXT -----
+let lang = 'en';
+const texts = {
+  en: {
+    title: "Complete Your Profile",
+    fullName: "Full Name",
+    farmName: "Farm Name",
+    country: "Select Country",
+    state: "Select State",
+    lga: "Select Local Government",
+    crop: "Select Main Crop",
+    farmSize: "Farm Size (in hectares)",
+    button: "Continue",
+    alertFill: "Please fill your "
+  },
+  ha: {
+    title: "Cikakken Bayanin Farko",
+    fullName: "Cikakken Suna",
+    farmName: "Sunan Gona",
+    country: "Zaɓi Ƙasa",
+    state: "Zaɓi Jihar",
+    lga: "Zaɓi Gundumar",
+    crop: "Zaɓi Babban Amfanin gona",
+    farmSize: "Girman Gona (hektar)",
+    button: "Ci gaba",
+    alertFill: "Don Allah cika "
+  }
+};
+
+// ----- CROPS -----
+const crops = {
+  en: ["Maize","Rice","Cassava","Tomato","Vegetables","Yam","Beans","Suya Beans"],
+  ha: ["Masara","Shinkafa","Kankana","Tumatir","Kayan lambu","Doya","Wake","Waken Suya"]
+};
+
+// ----- NIGERIA STATES + LGAs -----
+const nigeriaLGAs = [
+  {"name":"Abia","lgas":["Aba North","Aba South","Arochukwu","Bende","Ikwuano","Isiala-Ngwa North","Isiala-Ngwa South","Isuikwato","Obingwa","Ohafia","Osisioma","Ugwunagbo","Ukwa East","Ukwa West","Umuahia North","Umuahia South","Umu-Nnochi"]},
+  {"name":"Adamawa","lgas":["Demsa","Fufore","Ganaye","Gireri","Gombi","Guyuk","Hong","Jada","Lamurde","Madagali","Maiha","Mayo-Belwa","Michika","Mubi North","Mubi South","Numan","Shelleng","Song","Toungo","Yola North","Yola South"]},
+  {"name":"Akwa-Ibom","lgas":["Abak","Eastern Obolo","Eket","Esit Eket","Essien Udim","Etim Ekpo","Etinan","Ibeno","Ibesikpo Asutan","Ibiono Ibom","Ika","Ikono","Ikot Abasi","Ikot Ekpene","Ini","Itu","Mbo","Mkpat Enin","Nsit Atai","Nsit Ibom","Nsit Ubium","Obot Akara","Okobo","Onna","Oron","Oruk Anam","Udung Uko","Ukanafun","Uruan","Urue-Offong/Oruko","Uyo"]},
+  {"name":"Anambra","lgas":["Aguata","Anambra East","Anambra West","Anaocha","Awka North","Awka South","Ayamelum","Dunukofia","Ekwusigo","Idemili North","Idemili south","Ihiala","Njikoka","Nnewi North","Nnewi South","Ogbaru","Onitsha North","Onitsha South","Orumba North","Orumba South","Oyi"]},
+  {"name":"Bauchi","lgas":["Alkaleri","Bauchi","Bogoro","Damban","Darazo","Dass","Ganjuwa","Giade","Itas/Gadau","Jama'are","Katagum","Kirfi","Misau","Ningi","Shira","Tafawa-Balewa","Toro","Warji","Zaki"]},
+  {"name":"Bayelsa","lgas":["Brass","Ekeremor","Kolokuma/Opokuma","Nembe","Ogbia","Sagbama","Southern Jaw","Yenegoa"]},
+  {"name":"Benue","lgas":["Ado","Agatu","Apa","Buruku","Gboko","Guma","Gwer East","Gwer West","Katsina-Ala","Konshisha","Kwande","Logo","Makurdi","Obi","Ogbadibo","Oju","Okpokwu","Ohimini","Oturkpo","Tarka","Ukum","Ushongo","Vandeikya"]},
+  {"name":"Borno","lgas":["Abadam","Askira/Uba","Bama","Bayo","Biu","Chibok","Damboa","Dikwa","Gubio","Guzamala","Gwoza","Hawul","Jere","Kaga","Kala/Balge","Konduga","Kukawa","Kwaya Kusar","Mafa","Magumeri","Maiduguri","Marte","Mobbar","Monguno","Ngala","Nganzai","Shani"]},
+  {"name":"Cross-River","lgas":["Akpabuyo","Odukpani","Akamkpa","Biase","Abi","Ikom","Yarkur","Odubra","Boki","Ogoja","Yala","Obanliku","Obudu","Calabar South","Etung","Bekwara","Bakassi","Calabar Municipality"]},
+  {"name":"Delta","lgas":["Oshimili","Aniocha","Aniocha South","Ika South","Ika North-East","Ndokwa West","Ndokwa East","Isoko south","Isoko North","Bomadi","Burutu","Ughelli South","Ughelli North","Ethiope West","Ethiope East","Sapele","Okpe","Warri North","Warri South","Uvwie","Udu","Warri Central","Ukwani","Oshimili North","Patani"]},
+  {"name":"Ebonyi","lgas":["Abakaliki","Afikpo South","Afikpo North","Onicha","Ohaozara","Ishielu","lkwo","Ezza","Ezza South","Ohaukwu","Ebonyi","Ivo"]},
+  {"name":"Edo","lgas":["Esan North-East","Esan Central","Esan West","Egor","Ukpoba Central","Etsako Central","Igueben","Oredo","Ovia SouthWest","Ovia South-East","Orhionwon","Uhunmwonde","Etsako East","Esan South-East"]},
+  {"name":"Ekiti","lgas":["Ado","Ekiti-East","Ekiti-West","Emure/Ise/Orun","Ekiti South-West","Ikare","Irepodun","Ijero","Ido/Osi","Oye","Ikole","Moba","Gbonyin","Efon","Ise/Orun","Ilejemeje"]},
+  {"name":"Enugu","lgas":["Enugu South","Igbo-Eze South","Enugu North","Nkanu","Udi Agwu","Oji-River","Ezeagu","IgboEze North","Isi-Uzo","Nsukka","Igbo-Ekiti","Uzo-Uwani","Enugu East","Aninri","Nkanu East","Udenu"]},
+  {"name":"Gombe","lgas":["Akko","Balanga","Billiri","Dukku","Kaltungo","Kwami","Shomgom","Funakaye","Gombe","Nafada/Bajoga","Yamaltu/Delta"]},
+  {"name":"Imo","lgas":["Aboh-Mbaise","Ahiazu-Mbaise","Ehime-Mbano","Ezinihitte","Ideato North","Ideato South","Ihitte/Uboma","Ikeduru","Isiala Mbano","Isu","Mbaitoli","Ngor-Okpala","Njaba","Nwangele","Nkwerre","Obowo","Oguta","Ohaji/Egbema","Okigwe","Orlu","Orsu","Oru East","Oru West","Owerri-Municipal","Owerri North","Owerri West"]},
+  {"name":"Jigawa","lgas":["Auyo","Babura","Birni Kudu","Biriniwa","Buji","Dutse","Gagarawa","Garki","Gumel","Guri","Gwaram","Gwiwa","Hadejia","Jahun","Kafin Hausa","Kaugama Kazaure","Kiri Kasamma","Kiyawa","Maigatari","Malam Madori","Miga","Ringim","Roni","Sule-Tankarkar","Taura","Yankwashi"]},
+  {"name":"Kaduna","lgas":["Birni-Gwari","Chikun","Giwa","Igabi","Ikara","Jaba","Jema'a","Kachia","Kaduna North","Kaduna South","Kagarko","Kajuru","Kaura","Kauru","Kubau","Kudan","Lere","Makarfi","Sabon-Gari","Sanga","Soba","Zango-Kataf","Zaria"]},
+  {"name":"Kano","lgas":["Ajingi","Albasu","Bagwai","Bebeji","Bichi","Bunkure","Dala","Dambatta","Dawakin Kudu","Dawakin Tofa","Doguwa","Fagge","Gabasawa","Garko","Garum","Mallam","Gaya","Gezawa","Gwale","Gwarzo","Kabo","Kano Municipal","Karaye","Kibiya","Kiru","kumbotso","Kunchi","Kura","Madobi","Makoda","Minjibir","Nasarawa","Rano","Rimin Gado","Rogo","Shanono","Sumaila","Takali","Tarauni","Tofa","Tsanyawa","Tudun Wada","Ungogo","Warawa","Wudil"]},
+  {"name":"Katsina","lgas":["Bakori","Batagarawa","Batsari","Baure","Bindawa","Charanchi","Dandume","Danja","Dan Musa","Daura","Dutsi","Dutsin-Ma","Faskari","Funtua","Ingawa","Jibia","Kafur","Kaita","Kankara","Kankia","Katsina","Kurfi","Kusada","Mai'Adua","Malumfashi","Mani","Mashi","Matazuu","Musawa","Rimi","Sabuwa","Safana","Sandamu","Zango"]},
+  {"name":"Kebbi","lgas":["Aleiro","Arewa-Dandi","Argungu","Augie","Bagudo","Birnin Kebbi","Bunza","Dandi","Fakai","Gwandu","Jega","Kalgo","Koko/Besse","Maiyama","Ngaski","Sakaba","Shanga","Suru","Wasagu/Danko","Yauri","Zuru"]},
+  {"name":"Kogi","lgas":["Adavi","Ajaokuta","Ankpa","Bassa","Dekina","Ibaji","Idah","Igalamela-Odolu","Ijumu","Kabba/Bunu","Kogi","Lokoja","Mopa-Muro","Ofu","Ogori/Mangongo","Okehi","Okene","Olamabolo","Omala","Yagba East","Yagba West"]},
+  {"name":"Kwara","lgas":["Asa","Baruten","Edu","Ekiti","Ifelodun","Ilorin East","Ilorin West","Irepodun","Isin","Kaiama","Moro","Offa","Oke-Ero","Oyun","Pategi"]},
+  {"name":"Lagos","lgas":["Agege","Ajeromi-Ifelodun","Alimosho","Amuwo-Odofin","Apapa","Badagry","Epe","Eti-Osa","Ibeju/Lekki","Ifako-Ijaye","Ikeja","Ikorodu","Kosofe","Lagos Island","Lagos Mainland","Mushin","Ojo","Oshodi-Isolo","Shomolu","Surulere"]},
+  {"name":"Nasarawa","lgas":["Akwanga","Awe","Doma","Karu","Keana","Keffi","Kokona","Lafia","Nasarawa","Nasarawa-Eggon","Obi","Toto","Wamba"]},
+  {"name":"Niger","lgas":["Agaie","Agwara","Bida","Borgu","Bosso","Chanchaga","Edati","Gbako","Gurara","Katcha","Kontagora","Lapai","Lavun","Magama","Mariga","Mashegu","Mokwa","Muya","Pailoro","Rafi","Rijau","Shiroro","Suleja","Tafa","Wushishi"]},
+  {"name":"Ogun","lgas":["Abeokuta North","Abeokuta South","Ado-Odo/Ota","Egbado North","Egbado South","Ewekoro","Ifo","Ijebu East","Ijebu North","Ijebu North East","Ijebu Ode","Ikenne","Imeko-Afon","Ipokia","Obafemi-Owode","Ogun Waterside","Odeda","Odogbolu","Remo North","Shagamu"]},
+  {"name":"Ondo","lgas":["Akoko North East","Akoko North West","Akoko South Akure East","Akoko South West","Akure North","Akure South","Ese-Odo","Idanre","Ifedore","Ilaje","Ile-Oluji","Okeigbo","Irele","Odigbo","Okitipupa","Ondo East","Ondo West","Ose","Owo"]},
+  {"name":"Osun","lgas":["Aiyedade","Aiyedire","Atakumosa East","Atakumosa West","Boluwaduro","Boripe","Ede North","Ede South","Egbedore","Ejigbo","Ife Central","Ife East","Ife North","Ife South","Ifedayo","Ifelodun","Ila","Ilesha East","Ilesha West","Irepodun","Irewole","Isokan","Iwo","Obokun","Odo-Otin","Ola-Oluwa","Olorunda","Oriade","Orolu","Osogbo"]},
+  {"name":"Oyo","lgas":["Afijio","Akinyele","Atiba","Atigbo","Egbeda","IbadanCentral","Ibadan North","Ibadan North West","Ibadan South East","Ibadan South West","Ibarapa Central","Ibarapa East","Ibarapa North","Ido","Irepo","Iseyin","Itesiwaju","Iwajowa","Kajola","Lagelu","Ogbomosho North","Ogbomosho South","Ogo Oluwa","Olorunsogo","Oluyole","Ona-Ara","Orelope","Ori Ire","Oyo East","Oyo West","Saki East","Saki West","Surulere"]},
+  {"name":"Plateau","lgas":["Barikin Ladi","Bassa","Bokkos","Jos East","Jos North","Jos South","Kanam","Kanke","Langtang North","Langtang South","Mangu","Mikang","Pankshin","Qua'an Pan","Riyom","Shendam","Wase"]},
+  {"name":"Rivers","lgas":["Abua/Odual","Ahoada East","Ahoada West","Akuku Toru","Andoni","Asari-Toru","Bonny","Degema","Emohua","Eleme","Etche","Gokana","Ikwerre","Khana","Obia/Akpor","Ogba/Egbema/Ndoni","Ogu/Bolo","Okrika","Omumma","Opobo/Nkoro","Oyigbo","Port-Harcourt","Tai"]},
+  {"name":"Sokoto","lgas":["Binji","Bodinga","Dange-shnsi","Gada","Goronyo","Gudu","Gawabawa","Illela","Isa","Kware","kebbe","Rabah","Sabon birni","Shagari","Silame","Sokoto North","Sokoto South","Tambuwal","Tungaza","Tureta","Wamako","Wurno","Yabo"]},
+  {"name":"Taraba","lgas":["Ardo-kola","Bali","Donga","Gashaka","Cassol","Ibi","Jalingo","Karin-Lamido","Kurmi","Lau","Sardauna","Takum","Ussa","Wukari","Yorro","Zing"]},
+  {"name":"Yobe","lgas":["Bade","Bursari","Damaturu","Fika","Fune","Geidam","Gujba","Gulani","Jakusko","Karasuwa","Karawa","Machina","Nangere","Nguru Potiskum","Tarmua","Yunusari","Yusufari"]},
+  {"name":"Zamfara","lgas":["Anka","Bakura","Birnin Magaji","Bukkuyum","Bungudu","Gummi","Gusau","Kaura","Namoda","Maradun","Maru","Shinkafi","Talata Mafara","Tsafe","Zurmi"]},
+  {"name":"FCT","lgas":["Abaji","Bwari","Gwagwalada","Kuje","Kwali","AMAC"]}
+];
+
+// ----- POPULATE STATES & CROPS -----
+function populateStates() {
+  const stateSelect = document.getElementById('state');
+  stateSelect.innerHTML = `<option value="">${texts[lang].state}</option>`;
+  nigeriaLGAs.forEach(state => {
+    stateSelect.innerHTML += `<option value="${state.name}">${state.name}</option>`;
+  });
+}
+
+document.getElementById('state').addEventListener('change', function(){
+  const lgaSelect = document.getElementById('lga');
+  lgaSelect.innerHTML = `<option value="">${texts[lang].lga}</option>`;
+  const selected = nigeriaLGAs.find(s => s.name === this.value);
+  if(selected){
+    selected.lgas.forEach(lga => {
+      lgaSelect.innerHTML += `<option value="${lga}">${lga}</option>`;
+    });
+  }
+});
+
+function populateCrops(){
+  const cropSelect = document.getElementById('crop');
+  cropSelect.innerHTML = `<option value="">${texts[lang].crop}</option>`;
+  crops[lang].forEach(c => {
+    cropSelect.innerHTML += `<option value="${c}">${c}</option>`;
+  });
+}
+
+// ----- LANGUAGE TOGGLE -----
+function setLang(l){
+  lang = l;
+  document.getElementById('title').innerText = texts[lang].title;
+  document.getElementById('fullName').placeholder = texts[lang].fullName;
+  document.getElementById('farmName').placeholder = texts[lang].farmName;
+  document.getElementById('country').options[0].text = texts[lang].country;
+  document.getElementById('state').options[0].text = texts[lang].state;
+  document.getElementById('lga').options[0].text = texts[lang].lga;
+  document.getElementById('farmSize').placeholder = texts[lang].farmSize;
+  document.querySelector('button').innerText = texts[lang].button;
+  populateStates();
+  populateCrops();
+}
+
+// ----- SAVE PROFILE -----
+function finish(){
+    const profile = {
+        fullName: document.getElementById('fullName').value,
+        farmName: document.getElementById('farmName').value,
+        country: document.getElementById('country').value,
+        state: document.getElementById('state').value,
+        lga: document.getElementById('lga').value,
+        crop: document.getElementById('crop').value,
+        farmSize: document.getElementById('farmSize').value
+    };
+
+    for(const key in profile){
+        if(!profile[key]){
+            alert(texts[lang].alertFill + key);
+            return;
+        }
+    }
+
+  // Save offline
+  localStorage.setItem('profile', JSON.stringify(profile));
+
+  // ----- FIREBASE LOGIC -----
+  // Example: Save under userID
+ // Save to Firebase
+    const user = firebase.auth().currentUser;
+    if(user){
+        firebase.database().ref('users/' + user.uid + '/profile').set(profile)
+            .then(() => {
+                // Also mark profile as completed
+                return firebase.database().ref('users/' + user.uid).update({
+                    profileCompleted: true,
+                    profileCompletedAt: firebase.database.ServerValue.TIMESTAMP
+                });
+            })
+            .then(() => {
+                alert(lang==='en' ? "Profile saved successfully!" : "An adana bayaninka cikin nasara!");
+                window.location.href = "/dashboard/";  // ← Updated
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Error saving profile. You can try again.");
+            });
+    } else {
+        alert("Please login first");
+        window.location.href = "/login/";
+    }
+}
+
+// ----- INIT -----
+setLang('en');
+
+</script>
+</body>
+</html>

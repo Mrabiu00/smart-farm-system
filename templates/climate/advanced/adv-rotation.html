@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Crop Rotation Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --danger: #e74c3c; --warning: #f1c40f; --info: #3498db;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 24px; overflow-x: hidden; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 950px) { .layout-grid { grid-template-columns: 1fr 1.5fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); height: fit-content; }
+
+        /* Configuration Form */
+        .form-group { margin-bottom: 22px; }
+        .form-group label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1.2px; }
+        .form-group select, .form-group input { 
+            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); 
+            padding: 15px; border-radius: 14px; color: white; outline: none; transition: 0.3s; box-sizing: border-box; font-family: inherit;
+        }
+        .form-group select:focus, .form-group input:focus { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); }
+
+        .btn-generate { 
+            width: 100%; background: linear-gradient(90deg, var(--primary), #5a44ff); color: white; border: none; 
+            padding: 18px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 10px; font-size: 14px;
+        }
+        .btn-generate:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(123, 97, 255, 0.25); }
+
+        /* Rotation Timeline */
+        .timeline-container { position: relative; padding-left: 30px; margin-top: 25px; border-left: 2px dashed var(--border); }
+        .cycle-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 25px; position: relative; transition: 0.3s; }
+        .cycle-card:hover { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); }
+        .cycle-card::before { 
+            content: ''; position: absolute; left: -37px; top: 24px; width: 12px; height: 12px; 
+            background: var(--bg); border: 3px solid var(--primary); border-radius: 50%; 
+        }
+        
+        .cycle-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .cycle-season { font-size: 11px; color: var(--primary); text-transform: uppercase; font-weight: 600; letter-spacing: 1px; }
+        .cycle-crop { font-size: 20px; font-weight: 700; color: var(--text); }
+        .logic-tag { font-size: 10px; padding: 4px 10px; border-radius: 12px; font-weight: 600; text-transform: uppercase; }
+        
+        .tag-deplete { background: rgba(231, 76, 60, 0.1); color: var(--danger); border: 1px solid rgba(231, 76, 60, 0.2); }
+        .tag-restore { background: rgba(46, 204, 113, 0.1); color: var(--accent); border: 1px solid rgba(46, 204, 113, 0.2); }
+
+        .cycle-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin-top: 10px; }
+
+        .chart-container { height: 200px; width: 100%; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+
+
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/advanced/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Advanced Hub</a>
+            <h1 style="margin:0; font-size: 28px; font-weight: 600;">Crop Rotation Engine</h1>
+        </div>
+        <div style="text-align: right;">
+            <div id="engine-status" style="font-size: 12px; color: var(--primary);"><i class="fa-solid fa-gears"></i> Logic Engine Standby</div>
+            <div style="font-size: 14px; color: var(--muted); margin-top: 5px;">Multi-Season Planner</div>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-sliders" style="color:var(--primary); margin-right: 10px;"></i> Field Parameters</h3>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 25px;">Define your current crop and soil constraints to generate an algorithmic rotation plan.</p>
+            
+            <div class="form-group">
+                <label>Current/Last Crop Planted</label>
+                <select id="in-current-crop">
+                    <option value="maize">Maize (Heavy Feeder)</option>
+                    <option value="sorghum">Sorghum (Heavy Feeder)</option>
+                    <option value="soybeans">Soybeans (Nitrogen Fixer)</option>
+                    <option value="cassava">Cassava (Root Crop)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Primary Goal</label>
+                <select id="in-rotation-goal">
+                    <option value="nitrogen">Restore Soil Nitrogen</option>
+                    <option value="pest">Break Pest/Disease Cycles</option>
+                    <option value="profit">Maximize Consecutive Profit</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Planning Horizon</label>
+                <select id="in-seasons">
+                    <option value="2">2 Seasons</option>
+                    <option value="3">3 Seasons</option>
+                    <option value="4">4 Seasons</option>
+                </select>
+            </div>
+
+            <button class="btn-generate" id="btn-generate-plan"><i class="fa-solid fa-arrows-rotate"></i> Generate Sequence</button>
+        </div>
+
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-clipboard-list" style="color:var(--accent); margin-right: 10px;"></i> Algorithmic Sequence</h3>
+            
+            <div class="timeline-container" id="rotation-timeline">
+                
+                <div class="cycle-card">
+                    <div class="cycle-header">
+                        <div>
+                            <div class="cycle-season" id="season-1-lbl">Season 1 (Upcoming)</div>
+                            <div class="cycle-crop" id="crop-1-name">Awaiting Computation...</div>
+                        </div>
+                        <div class="logic-tag tag-deplete" id="crop-1-tag" style="display: none;">--</div>
+                    </div>
+                    <div class="cycle-desc" id="crop-1-desc">
+                        Submit field parameters to generate the first algorithmic crop recommendation.
+                    </div>
+                </div>
+
+                <div class="cycle-card" style="border-color: rgba(255,255,255,0.05); opacity: 0.6;">
+                    <div class="cycle-header">
+                        <div>
+                            <div class="cycle-season" id="season-2-lbl">Season 2</div>
+                            <div class="cycle-crop" id="crop-2-name">Awaiting Sequence...</div>
+                        </div>
+                        <div class="logic-tag tag-restore" id="crop-2-tag" style="display: none;">--</div>
+                    </div>
+                    <div class="cycle-desc" id="crop-2-desc">
+                        Dependent on Season 1 calculations.
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="chart-container">
+                <h4 style="font-size: 11px; color: var(--muted); text-transform: uppercase; margin: 0 0 15px 0; letter-spacing: 1px;">Projected Soil Nitrogen Levels</h4>
+                <canvas id="nutrientChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Initialize the Nutrient Chart
+    const ctx = document.getElementById('nutrientChart').getContext('2d');
+    window.nutrientChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Current', 'Season 1', 'Season 2'],
+            datasets: [{
+                label: 'Nitrogen Level (mg/kg)',
+                data: [0, 0, 0], 
+                borderColor: '#2ecc71',
+                borderWidth: 3,
+                tension: 0.3,
+                pointBackgroundColor: '#2ecc71',
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { ticks: { color: '#8b8b9a', font: {size: 10} }, grid: { display: false } },
+                y: { ticks: { color: '#8b8b9a', font: {size: 10} }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // 2. The AJAX Fetch Engine
+    document.getElementById('btn-generate-plan').addEventListener('click', async function() {
+        const btn = this;
+        const originalText = btn.innerHTML;
+
+        // Collect parameters
+        const payload = {
+            current_crop: document.getElementById('in-current-crop').value,
+            goal: document.getElementById('in-rotation-goal').value,
+            seasons: document.getElementById('in-seasons').value
+        };
+
+        // UI Loading State
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Calculating Algorithm...';
+        btn.disabled = true;
+        document.getElementById('engine-status').innerHTML = '<i class="fa-solid fa-microchip fa-spin"></i> Processing Constraints...';
+
+        try {
+            const response = await fetch('/api/rotation-plan/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}' 
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                
+                // 3. Dynamically Generate Timeline Cards based on AI sequence
+                const timelineBox = document.getElementById('rotation-timeline');
+                timelineBox.innerHTML = ''; // Clear the default waiting cards
+
+                result.sequence.forEach((item, index) => {
+                    // Make the later seasons slightly faded to represent the future
+                    const opacity = index === 0 ? '1' : (1 - (index * 0.2)); 
+                    
+                    const cardHTML = `
+                        <div class="cycle-card" style="opacity: ${opacity}; border-color: ${index === 0 ? 'var(--primary)' : 'rgba(255,255,255,0.05)'}; background: ${index === 0 ? 'rgba(123, 97, 255, 0.05)' : 'rgba(255,255,255,0.02)'};">
+                            <div class="cycle-header">
+                                <div>
+                                    <div class="cycle-season">Season ${item.season_num}</div>
+                                    <div class="cycle-crop">${item.crop_name}</div>
+                                </div>
+                                <div class="logic-tag ${item.tag_class}">${item.tag_text}</div>
+                            </div>
+                            <div class="cycle-desc">${item.description}</div>
+                        </div>
+                    `;
+                    timelineBox.innerHTML += cardHTML;
+                });
+
+                // 4. Animate the Chart with Dynamic Data
+                window.nutrientChart.data.labels = result.chart_labels;
+                window.nutrientChart.data.datasets[0].data = result.nitrogen_levels;
+                window.nutrientChart.update();
+
+                // Finalize Status
+                document.getElementById('engine-status').innerHTML = '<i class="fa-solid fa-check-circle"></i> Optimal Sequence Generated';
+                
+            } else {
+                alert("API Error: " + result.message);
+                document.getElementById('engine-status').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Error';
+            }
+
+        } catch (error) {
+            console.error("Network Error:", error);
+            alert("Network Error: Could not reach the server.");
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+</script>
+
+</body>
+</html>

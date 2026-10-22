@@ -1,0 +1,1566 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SmartFarm Dashboard</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --bg: #0b0b0e;
+        --card: #111116;
+        --muted: #aab0b6;
+        --text: #ffffff;
+        --primary: #7b61ff;
+        --green: #2ecc71;
+        --warning: #f39c12;
+        --danger: #e74c3c;
+        --border: rgba(255, 255, 255, 0.08);
+        --shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+        --radius: 18px;
+      }
+
+      * {
+        box-sizing: border-box;
+        font-family: Poppins;
+      }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(
+            1000px 600px at 15% -10%,
+            rgba(123, 97, 255, 0.25),
+            transparent 60%
+          ),
+          radial-gradient(
+            900px 600px at 90% 10%,
+            rgba(46, 204, 113, 0.16),
+            transparent 60%
+          ),
+          var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        backdrop-filter: blur(10px);
+        background: rgba(11, 11, 14, 0.72);
+        border-bottom: 1px solid var(--border);
+      }
+      .topbar-inner {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 14px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 200px;
+      }
+      .brand i {
+        font-size: 22px;
+        color: var(--green);
+        filter: drop-shadow(0 0 14px rgba(46, 204, 113, 0.28));
+      }
+      .brand .name {
+        font-size: 18px;
+        font-weight: 700;
+        background: linear-gradient(90deg, var(--primary), var(--green));
+        -webkit-background-clip: text;
+        color: transparent;
+        letter-spacing: 0.2px;
+        line-height: 1;
+      }
+      .brand .mini {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 220px;
+      }
+
+      /* Weather Widget */
+      .weather-widget {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.03);
+        padding: 6px 12px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+      }
+      .weather-widget i {
+        color: #f1c40f;
+      }
+
+      .navlinks {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+      }
+      .navlinks a {
+        text-decoration: none;
+        color: #d7dbe0;
+        font-size: 13px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid transparent;
+        transition: 0.15s ease;
+      }
+      .navlinks a:hover {
+        border-color: rgba(123, 97, 255, 0.25);
+        background: rgba(123, 97, 255, 0.08);
+      }
+      .navlinks a.active {
+        border-color: rgba(46, 204, 113, 0.25);
+        background: rgba(46, 204, 113, 0.08);
+        color: #eafff3;
+      }
+
+      .rightbox {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+      }
+
+      /* Notification Center */
+      .notif-wrapper {
+        position: relative;
+      }
+      .notif-badge {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        background: var(--danger);
+        color: white;
+        font-size: 9px;
+        font-weight: bold;
+        padding: 2px 5px;
+        border-radius: 10px;
+        border: 2px solid var(--card);
+      }
+      .notif-dropdown {
+        position: absolute;
+        top: 120%;
+        right: 0;
+        width: 280px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .notif-dropdown.show {
+        display: flex;
+        animation: slideDown 0.2s ease;
+      }
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .notif-header {
+        padding: 12px 15px;
+        font-size: 12px;
+        font-weight: 700;
+        border-bottom: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .notif-item {
+        padding: 12px 15px;
+        font-size: 11px;
+        color: var(--muted);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      .notif-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+      }
+      .notif-item i {
+        margin-top: 2px;
+      }
+
+      .pill {
+        padding: 8px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border);
+        color: #d7dbe0;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        max-width: 260px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .pill i {
+        color: var(--green);
+      }
+
+      .btn {
+        border: none;
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.15s ease;
+        font-size: 13px;
+        position: relative;
+      }
+      .btn.secondary {
+        background: #1c1c22;
+        color: #e6e8eb;
+        border: 1px solid var(--border);
+      }
+      .btn.secondary:hover {
+        transform: translateY(-1px);
+        border-color: rgba(123, 97, 255, 0.35);
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 18px;
+      }
+
+      .hero {
+        margin-top: 12px;
+        display: grid;
+        grid-template-columns: 1.3fr 0.7fr;
+        gap: 14px;
+      }
+      @media (max-width: 900px) {
+        .hero {
+          grid-template-columns: 1fr;
+        }
+        .brand {
+          min-width: auto;
+        }
+        .rightbox {
+          min-width: auto;
+          justify-content: flex-start;
+        }
+        .weather-widget {
+          display: none;
+        } /* Hide on tiny mobile screens to save space */
+      }
+
+      .panel {
+        background: linear-gradient(
+          180deg,
+          rgba(123, 97, 255, 0.12),
+          rgba(17, 17, 22, 0.9)
+        );
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 18px;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .panel::after {
+        content: "";
+        position: absolute;
+        inset: -60px -80px auto auto;
+        width: 220px;
+        height: 220px;
+        background: radial-gradient(
+          circle at 30% 30%,
+          rgba(46, 204, 113, 0.22),
+          transparent 60%
+        );
+        transform: rotate(18deg);
+        z-index: 0;
+      }
+
+      /* Farm Context Banner */
+      .farm-context {
+        position: relative;
+        z-index: 1;
+        font-size: 11px;
+        color: var(--primary);
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 1px;
+        margin-bottom: 5px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .context-tag {
+        background: rgba(123, 97, 255, 0.15);
+        padding: 3px 8px;
+        border-radius: 8px;
+      }
+
+      .panel h1 {
+        margin: 0 0 6px;
+        font-size: 20px;
+        letter-spacing: 0.2px;
+        position: relative;
+        z-index: 1;
+      }
+      .panel p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* Needs Attention Cards */
+      .attention-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+        position: relative;
+        z-index: 1;
+      }
+      .attn-card {
+        flex: 1;
+        min-width: 130px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.3);
+      }
+      .attn-card.warning {
+        border-color: rgba(243, 156, 18, 0.3);
+        color: var(--warning);
+      }
+      .attn-card.info {
+        border-color: rgba(52, 152, 219, 0.3);
+        color: #3498db;
+      }
+      .attn-card.success {
+        border-color: rgba(46, 204, 113, 0.3);
+        color: var(--green);
+      }
+
+      /* Quick Action Shortcuts */
+      .quick-actions-bar {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+        position: relative;
+        z-index: 1;
+      }
+      .btn-quick {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-family: inherit;
+      }
+      .btn-quick:hover {
+        background: rgba(123, 97, 255, 0.1);
+        border-color: var(--primary);
+      }
+      .btn-quick i {
+        color: var(--primary);
+      }
+
+      .stats {
+        display: flex;
+        gap: 10px;
+        margin-top: auto;
+        padding-top: 15px;
+        flex-wrap: wrap;
+        position: relative;
+        z-index: 1;
+      }
+      .stat {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 10px 12px;
+        min-width: 140px;
+        flex: 1;
+      }
+      .stat .label {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .stat .value {
+        font-weight: 700;
+        margin-top: 2px;
+      }
+
+      .sidecard {
+        background: linear-gradient(
+          180deg,
+          rgba(46, 204, 113, 0.1),
+          rgba(17, 17, 22, 0.9)
+        );
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+      }
+      .search {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .search input {
+        flex: 1;
+        padding: 12px 12px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: #0f0f14;
+        color: #fff;
+        outline: none;
+        font-size: 13px;
+      }
+      .search input::placeholder {
+        color: #7f8790;
+      }
+      .search button {
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .quick {
+        margin-top: 14px;
+        display: grid;
+        gap: 10px;
+      }
+      .quick a {
+        text-decoration: none;
+        color: #e6e8eb;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: 0.15s ease;
+      }
+      .quick a:hover {
+        transform: translateY(-1px);
+        border-color: rgba(46, 204, 113, 0.35);
+      }
+      .quick a i {
+        color: var(--green);
+      }
+
+      /* System Health & Quota Tracker */
+      .health-tracker {
+        margin-top: auto;
+        padding-top: 20px;
+      }
+      .ht-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+      .ht-item {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        padding: 6px 0;
+        border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+      }
+      .ht-item:last-child {
+        border-bottom: none;
+      }
+      .ht-item .status {
+        font-weight: 600;
+      }
+      .ht-item .status.online {
+        color: var(--green);
+      }
+
+      .section-title {
+        margin-top: 18px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .section-title h2 {
+        margin: 0;
+        font-size: 16px;
+        letter-spacing: 0.2px;
+      }
+      .section-title span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .grid {
+        margin-top: 12px;
+        display: grid;
+        grid-template-columns: repeat(1, 1fr);
+        gap: 14px;
+      }
+      @media (min-width: 720px) {
+        .grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (min-width: 1100px) {
+        .grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      .card {
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.04),
+          rgba(17, 17, 22, 0.92)
+        );
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px;
+        box-shadow: var(--shadow);
+        transition: 0.15s ease;
+        position: relative;
+        overflow: hidden;
+      }
+      .card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(123, 97, 255, 0.35);
+      }
+      .cardTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(123, 97, 255, 0.12);
+        border: 1px solid rgba(123, 97, 255, 0.25);
+      }
+      .icon i {
+        font-size: 18px;
+        color: #cfc9ff;
+      }
+      .badge {
+        font-size: 11px;
+        color: #eafff3;
+        border: 1px solid rgba(46, 204, 113, 0.25);
+        background: rgba(46, 204, 113, 0.08);
+        padding: 6px 10px;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+      .card h3 {
+        margin: 10px 0 6px;
+        font-size: 15px;
+      }
+      .card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12.5px;
+        line-height: 1.55;
+        min-height: 48px;
+      }
+      .card .cta {
+        margin-top: 12px;
+        width: 100%;
+        padding: 12px 14px;
+        border: none;
+        border-radius: 14px;
+        background: var(--primary);
+        color: #fff;
+        font-weight: 800;
+        cursor: pointer;
+        transition: 0.15s ease;
+      }
+      .card .cta:hover {
+        opacity: 0.92;
+      }
+install google
+      .how {
+        margin-top: 18px;
+        background: linear-gradient(
+          180deg,
+          rgba(46, 204, 113, 0.08),
+          rgba(17, 17, 22, 0.92)
+        );
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 18px;
+      }
+      .steps {
+        margin-top: 12px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      @media (min-width: 900px) {
+        .steps {
+          grid-template-columns: repeat(5, 1fr);
+        }
+      }
+      .step {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 12px;
+        min-height: 120px;
+      }
+      .step .n {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 10px;
+        background: rgba(123, 97, 255, 0.15);
+        border: 1px solid rgba(123, 97, 255, 0.25);
+        font-weight: 800;
+        margin-bottom: 8px;
+        color: #d9d4ff;
+      }
+      .step h4 {
+        margin: 0 0 6px;
+        font-size: 13px;
+      }
+      .step p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      footer {
+        margin-top: 18px;
+        padding: 18px;
+        border-top: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 12px;
+        text-align: center;
+      }
+
+      /* Mobile nav hide */
+      @media (max-width: 520px) {
+        .navlinks {
+          display: none;
+        }
+        .brand .mini {
+          max-width: 120px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <i class="fa-solid fa-seedling"></i>
+          <div>
+            <div class="name">SmartFarm</div>
+            <div class="mini" id="farmMini">Loading farm…</div>
+          </div>
+        </div>
+
+        <div class="weather-widget" id="weatherWidget">
+          <i class="fa-solid fa-cloud-sun"></i>
+          <span id="sysWeather">{{ temp }}°C, {{ city }} ({{ condition }})</span>
+        </div>
+
+        <div class="navlinks">
+          <a href="dashboard.html" class="active" data-i18n="nav_home">Home</a>
+          <a href="modules.html" data-i18n="nav_modules">Modules</a>
+          <a href="dashboard.html" data-i18n="nav_dashboard">Dashboard</a>
+        </div>
+
+        <div class="rightbox">
+          <div class="notif-wrapper">
+            <button class="btn secondary" id="notifBtn" style="padding: 10px">
+              <i class="fa-regular fa-bell"></i>
+              <span class="notif-badge" id="notifBadge">3</span>
+            </button>
+            <div class="notif-dropdown" id="notifDropdown">
+              <div class="notif-header" data-i18n="notif_header">
+                Notifications
+              </div>
+              <div class="notif-item">
+                <i
+                  class="fa-solid fa-droplet"
+                  style="color: var(--warning)"
+                ></i>
+                <span id="notifMsg1">Humidity spike detected in Sector 1</span>
+              </div>
+              <div class="notif-item">
+                <i
+                  class="fa-solid fa-chart-line"
+                  style="color: var(--green)"
+                ></i>
+                <span id="notifMsg2">Maize ROI projection updated</span>
+              </div>
+              <div class="notif-item">
+                <i
+                  class="fa-solid fa-wifi-slash"
+                  style="color: var(--muted)"
+                ></i>
+                <span id="notifMsg3">Offline data ready to sync</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pill" id="userPill">
+            <i class="fa-solid fa-user"></i> Loading…
+          </div>
+
+          <div class="pill" id="langToggle" style="cursor: pointer">
+            <i class="fa-solid fa-language"></i> English
+          </div>
+
+          <button
+            class="btn secondary"
+            id="editProfileBtn"
+            data-i18n="btn_edit"
+          >
+            Edit Profile
+          </button>
+          <button class="btn secondary" id="logoutBtn" data-i18n="btn_logout">
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="hero">
+        <div class="panel">
+          <div class="farm-context">
+            <span class="context-tag" id="activeProfile"
+              >Active: Experimental Farm</span
+            >
+            <span class="context-tag" id="activeSeason"
+              ><i class="fa-solid fa-sun"></i> Dry Season Planning</span
+            >
+          </div>
+
+          <h1 id="welcomeTitle" data-i18n="welcome_title">Welcome</h1>
+          <p data-i18n="welcome_desc">
+            Manage your farm intelligently using monitoring analytics, smart
+            automation, AI predictions, market insights, and advanced tools —
+            with offline support and Hausa/English access.
+          </p>
+
+          <div class="quick-actions-bar">
+            <button
+              class="btn-quick"
+              onclick="location.href = '/AI-Prediction/ai-vision/'"
+            >
+              <i class="fa-solid fa-camera"></i>
+              <span data-i18n="qa_scan">Scan Disease</span>
+            </button>
+            <button
+              class="btn-quick"
+              onclick="location.href = '/sector-financial/finance-ledger/'"
+            >
+              <i class="fa-solid fa-wallet"></i>
+              <span data-i18n="qa_expense">Log Expense</span>
+            </button>
+            <button
+              class="btn-quick"
+              onclick="location.href = '/advanced/adv-offline/'"
+            >
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span data-i18n="qa_sync">Sync Data</span>
+            </button>
+          </div>
+
+          <div class="attention-row">
+            <div class="attn-card warning">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span id="attnTasks">2 Overdue Tasks</span>
+            </div>
+            <div class="attn-card info">
+              <i class="fa-solid fa-droplet"></i>
+              <span id="attnWater">Irrigation in 4 Hrs</span>
+            </div>
+            <div class="attn-card success">
+              <i class="fa-solid fa-arrow-trend-up"></i>
+              <span id="attnMarket">Maize Up 2%</span>
+            </div>
+          </div>
+
+          <div class="stats">
+            <div class="stat">
+              <div class="label" data-i18n="stat_profile_label">
+                Profile Status
+              </div>
+              <div class="value" id="profileStatus">Checking…</div>
+            </div>
+            <div class="stat">
+              <div class="label" data-i18n="stat_lang_label">Language</div>
+              <div class="value" id="langStatus">Auto</div>
+            </div>
+            <div class="stat">
+              <div class="label" data-i18n="stat_mode_label">Mode</div>
+              <div class="value" id="modeStatus" data-i18n="stat_mode_value">
+                Online / Offline Ready
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidecard">
+          <h2 style="margin: 0; font-size: 16px" data-i18n="quick_title">
+            Quick Access
+          </h2>
+          <p
+            style="
+              margin: 6px 0 0;
+              color: var(--muted);
+              font-size: 12px;
+              line-height: 1.5;
+            "
+            data-i18n="quick_desc"
+          >
+            Jump into key tools quickly. Search modules or go straight to a
+            sector.
+          </p>
+
+          <div class="search">
+            <input
+              id="searchInput"
+              data-i18n-ph="search_placeholder"
+              placeholder="Search modules… (e.g. weather, disease, prices)"
+            />
+            <button id="searchBtn" title="Search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+          </div>
+
+          <div class="quick">
+            <a href="/modules/"
+              ><span data-i18n="quick_all_modules">Open All Modules</span>
+              <i class="fa-solid fa-arrow-right"></i
+            ></a>
+            <a href="/create-profile/"
+              ><span data-i18n="quick_update_profile">Update Farm Profile</span>
+              <i class="fa-solid fa-pen-to-square"></i
+            ></a>
+            <a href="#" id="exportBtn"
+              ><span data-i18n="quick_export">Export Report (Coming Soon)</span>
+              <i class="fa-solid fa-file-arrow-down"></i
+            ></a>
+          </div>
+
+          <div class="health-tracker">
+            <div class="ht-title" data-i18n="ht_title">
+              System Health & API Quota
+            </div>
+            <div class="ht-item">
+              <span>Firebase DB</span>
+              <span class="status online" id="sysDb">Connected</span>
+            </div>
+            <div class="ht-item">
+              <span>Vision ML API</span>
+              <span class="status" style="color: var(--muted)" id="sysApi"
+                >45/100 Scans</span
+              >
+            </div>
+            <div class="ht-item">
+              <span>Server Ping</span>
+              <span class="status" style="color: var(--muted)" id="sysPing"
+                >24ms</span
+              >
+            </div>
+          </div>
+
+          <div style="margin-top: 12px">
+            <span class="badge"
+              ><i class="fa-solid fa-bolt"></i>
+              <span data-i18n="badge_pro">Pro Dashboard</span></span
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">
+        <h2 data-i18n="sectors_title">Explore Project Sectors (5)</h2>
+        <span data-i18n="sectors_sub">Choose a sector and try a module</span>
+      </div>
+
+      <div class="grid" id="sectorGrid">
+        <div
+          class="card"
+          data-go="/monitoring/"
+          data-keywords="weather analytics yield growth rainfall climate trend dashboard"
+        >
+          <div class="cardTop">
+            <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
+            <span class="badge" data-i18n="badge_monitoring">Monitoring</span>
+          </div>
+          <h3 data-i18n="s1_title">Core Monitoring & Analytics</h3>
+          <p data-i18n="s1_desc">
+            Track weather, climate trends, crop growth and yield performance
+            with interactive dashboards.
+          </p>
+          <button class="cta" data-i18n="btn_try">Try Now</button>
+        </div>
+
+        <div
+          class="card"
+          data-go="/automation/smart-task/"
+          data-keywords="automation planting fertilizer irrigation pest alerts harvest reminders"
+        >
+          <div class="cardTop">
+            <div class="icon"><i class="fa-solid fa-robot"></i></div>
+            <span class="badge" data-i18n="badge_automation">Automation</span>
+          </div>
+          <h3 data-i18n="s2_title">Smart Task Automation</h3>
+          <p data-i18n="s2_desc">
+            Generate schedules and alerts for planting, irrigation, fertilizer,
+            pest prevention and harvest.
+          </p>
+          <button class="cta" data-i18n="btn_try">Try Now</button>
+        </div>
+
+        <div
+          class="card"
+          data-go="/ai/image-main/"
+          data-keywords="ai disease diagnosis image upload chatbot soil fertility recommendation heatmap prediction"
+        >
+          <div class="cardTop">
+            <div class="icon"><i class="fa-solid fa-brain"></i></div>
+            <span class="badge" data-i18n="badge_ai">AI</span>
+          </div>
+          <h3 data-i18n="s3_title">AI & Predictive Features</h3>
+          <p data-i18n="s3_desc">
+            Diagnose diseases from images, enter soil data, get recommendations
+            and predictions.
+          </p>
+          <button class="cta" data-i18n="btn_try">Try Now</button>
+        </div>
+
+        <div
+          class="card"
+          data-go="/finance/"
+          data-keywords="market prices finance profit forecasting tracker budget"
+        >
+          <div class="cardTop">
+            <div class="icon"><i class="fa-solid fa-naira-sign"></i></div>
+            <span class="badge" data-i18n="badge_finance">Finance</span>
+          </div>
+          <h3 data-i18n="s4_title">Financial & Market</h3>
+          <p data-i18n="s4_desc">
+            Track market prices, forecast trends, manage finances and optimize
+            harvest profit.
+          </p>
+          <button class="cta" data-i18n="btn_try">Try Now</button>
+        </div>
+
+        <div
+          class="card"
+          data-go="/advanced/"
+          data-keywords="ndvi satellite rotation scenario simulation offline multilingual hausa english"
+        >
+          <div class="cardTop">
+            <div class="icon"><i class="fa-solid fa-satellite"></i></div>
+            <span class="badge" data-i18n="badge_advanced">Advanced</span>
+          </div>
+          <h3 data-i18n="s5_title">Advanced Additions</h3>
+          <p data-i18n="s5_desc">
+            Use satellite health (NDVI), crop rotation, simulation tools,
+            offline mode and reports.
+          </p>
+          <button class="cta" data-i18n="btn_try">Try Now</button>
+        </div>
+      </div>
+
+      <div class="how">
+        <h2 style="margin: 0; font-size: 16px" data-i18n="how_title">
+          How SmartFarm Works
+        </h2>
+        <p
+          style="
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 12.5px;
+            line-height: 1.5;
+          "
+          data-i18n="how_desc"
+        >
+          A simple workflow farmers can understand — even offline.
+        </p>
+
+        <div class="steps">
+          <div class="step">
+            <div class="n">1</div>
+            <h4 data-i18n="step1_title">Input Parameters</h4>
+            <p data-i18n="step1_desc">
+              Enter soil data, weather conditions, location, or upload a plant
+              image.
+            </p>
+          </div>
+          <div class="step">
+            <div class="n">2</div>
+            <h4 data-i18n="step2_title">AI Processing</h4>
+            <p data-i18n="step2_desc">
+              The system analyzes your inputs using intelligent models and
+              rules.
+            </p>
+          </div>
+          <div class="step">
+            <div class="n">3</div>
+            <h4 data-i18n="step3_title">Get Predictions</h4>
+            <p data-i18n="step3_desc">
+              Receive disease diagnosis, rainfall insights, yield estimates and
+              recommendations.
+            </p>
+          </div>
+          <div class="step">
+            <div class="n">4</div>
+            <h4 data-i18n="step4_title">Take Action</h4>
+            <p data-i18n="step4_desc">
+              Follow smart schedules for irrigation, fertilizer, pest prevention
+              and harvesting.
+            </p>
+          </div>
+          <div class="step">
+            <div class="n">5</div>
+            <h4 data-i18n="step5_title">Track Progress</h4>
+            <p data-i18n="step5_desc">
+              Monitor outcomes over time with dashboards, trends and exportable
+              reports.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <footer>
+        © <span id="year"></span>
+        <span data-i18n="footer_text"
+          >SmartFarm Monitoring & Prediction System — English / Hausa •
+          Offline-ready</span
+        >
+      </footer>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+      import {
+        getAuth,
+        onAuthStateChanged,
+        signOut,
+      } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        getDoc,
+        setDoc,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyCgXeXIybagT9q-riMCSzXsuY7xgoVKYtU",
+        authDomain: "smart-farm00.firebaseapp.com",
+        projectId: "smart-farm00",
+        storageBucket: "smart-farm00.firebasestorage.app",
+        messagingSenderId: "287777077332",
+        appId: "1:287777077332:web:046d6a83cb5c71ae8895c1",
+        measurementId: "G-5TTH12ZBVN",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      document.getElementById("year").textContent = new Date().getFullYear();
+
+      const farmMini = document.getElementById("farmMini");
+      const userPill = document.getElementById("userPill");
+      const welcomeTitle = document.getElementById("welcomeTitle");
+      const profileStatus = document.getElementById("profileStatus");
+      const langStatus = document.getElementById("langStatus");
+      const langToggle = document.getElementById("langToggle");
+
+      // Notification UI Logic
+      const notifBtn = document.getElementById("notifBtn");
+      const notifDropdown = document.getElementById("notifDropdown");
+      notifBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        notifDropdown.classList.toggle("show");
+      });
+      document.addEventListener("click", (e) => {
+        if (!notifDropdown.contains(e.target) && !notifBtn.contains(e.target)) {
+          notifDropdown.classList.remove("show");
+        }
+      });
+
+      // ---------------------------
+      // i18n Translations (EN + HA)
+      // ---------------------------
+      const i18n = {
+        en: {
+          nav_home: "Home",
+          nav_modules: "Modules",
+          nav_dashboard: "Dashboard",
+          btn_edit: "Edit Profile",
+          btn_logout: "Logout",
+          btn_try: "Try Now",
+
+          welcome_title: "Welcome",
+          welcome_desc:
+            "Manage your farm intelligently using monitoring analytics, smart automation, AI predictions, market insights, and advanced tools — with offline support and Hausa/English access.",
+
+          stat_profile_label: "Profile Status",
+          stat_lang_label: "Language",
+          stat_mode_label: "Mode",
+          stat_mode_value: "Online / Offline Ready",
+
+          quick_title: "Quick Access",
+          quick_desc:
+            "Jump into key tools quickly. Search modules or go straight to a sector.",
+          search_placeholder: "Search modules… (e.g. weather, disease, prices)",
+          quick_all_modules: "Open All Modules",
+          quick_update_profile: "Update Farm Profile",
+          quick_export: "Export Report (Coming Soon)",
+          badge_pro: "Pro Dashboard",
+
+          sectors_title: "Explore Project Sectors (5)",
+          sectors_sub: "Choose a sector and try a module",
+
+          badge_monitoring: "Monitoring",
+          badge_automation: "Automation",
+          badge_ai: "AI",
+          badge_finance: "Finance",
+          badge_advanced: "Advanced",
+
+          s1_title: "Core Monitoring & Analytics",
+          s1_desc:
+            "Track weather, climate trends, crop growth and yield performance with interactive dashboards.",
+
+          s2_title: "Smart Task Automation",
+          s2_desc:
+            "Generate schedules and alerts for planting, irrigation, fertilizer, pest prevention and harvest.",
+
+          s3_title: "AI & Predictive Features",
+          s3_desc:
+            "Diagnose diseases from images, enter soil data, get recommendations and predictions.",
+
+          s4_title: "Financial & Market",
+          s4_desc:
+            "Track market prices, forecast trends, manage finances and optimize harvest profit.",
+
+          s5_title: "Advanced Additions",
+          s5_desc:
+            "Use satellite health (NDVI), crop rotation, simulation tools, offline mode and reports.",
+
+          how_title: "How SmartFarm Works",
+          how_desc: "A simple workflow farmers can understand — even offline.",
+
+          step1_title: "Input Parameters",
+          step1_desc:
+            "Enter soil data, weather conditions, location, or upload a plant image.",
+
+          step2_title: "AI Processing",
+          step2_desc:
+            "The system analyzes your inputs using intelligent models and rules.",
+
+          step3_title: "Get Predictions",
+          step3_desc:
+            "Receive disease diagnosis, rainfall insights, yield estimates and recommendations.",
+
+          step4_title: "Take Action",
+          step4_desc:
+            "Follow smart schedules for irrigation, fertilizer, pest prevention and harvesting.",
+
+          step5_title: "Track Progress",
+          step5_desc:
+            "Monitor outcomes over time with dashboards, trends and exportable reports.",
+
+          footer_text:
+            "SmartFarm Monitoring & Prediction System — English / Hausa • Offline-ready",
+
+          profile_complete: "Complete ✅",
+          profile_incomplete: "Incomplete ⚠️",
+          export_alert: "Report export will be added later (PDF).",
+
+          // NEW UI TRANSLATIONS
+          notif_header: "Notifications",
+          qa_scan: "Scan Disease",
+          qa_expense: "Log Expense",
+          qa_sync: "Sync Data",
+          ht_title: "System Health & API Quota",
+        },
+
+        ha: {
+          nav_home: "Gida",
+          nav_modules: "Bangarori",
+          nav_dashboard: "Dashbod",
+          btn_edit: "Gyara Bayani",
+          btn_logout: "Fita",
+          btn_try: "Gwada Yanzu",
+
+          welcome_title: "Barka da zuwa",
+          welcome_desc:
+            "Ka sarrafa gonarka cikin hikima ta hanyar nazari, aikin kai tsaye, hasashen AI, bayanan kasuwa da kayan aikin ci gaba — tare da offline da Hausa/Turanci.",
+
+          stat_profile_label: "Matsayin Bayani",
+          stat_lang_label: "Harshe",
+          stat_mode_label: "Yanayi",
+          stat_mode_value: "Online / Offline a shirye",
+
+          quick_title: "Hanya Mai Sauri",
+          quick_desc: "Shiga kayan aiki da sauri. Nemo modules ko zaɓi sashe.",
+
+          search_placeholder: "Nemo modules… (misali: yanayi, cuta, farashi)",
+          quick_all_modules: "Buɗe Duk Modules",
+          quick_update_profile: "Sabunta Bayanin Gona",
+          quick_export: "Fitar da Rahoto (Nan gaba)",
+          badge_pro: "Dashbod na Kwararru",
+
+          sectors_title: "Bangarorin Aikin (5)",
+          sectors_sub: "Zaɓi sashe ka gwada module",
+
+          badge_monitoring: "Kula",
+          badge_automation: "Aiki Kai Tsaye",
+          badge_ai: "AI",
+          badge_finance: "Kuɗi",
+          badge_advanced: "Ci gaba",
+
+          s1_title: "Kula da Bayanai & Nazari",
+          s1_desc:
+            "Kula da yanayi, sauyin yanayi, girman amfanin gona da riba ta dashboards masu hulɗa.",
+
+          s2_title: "Ayyukan Kai Tsaye",
+          s2_desc:
+            "Ƙirƙiri jadawali da faɗakarwa don shuka, ban-ruwa, takin zamani, kariya daga kwari da girbi.",
+
+          s3_title: "AI & Hasashe",
+          s3_desc:
+            "Gano cututtuka daga hoto, shigar da bayanan ƙasa, samun shawarwari da hasashe.",
+
+          s4_title: "Kuɗi & Kasuwa",
+          s4_desc:
+            "Bibiyar farashin kasuwa, hasashen canji, sarrafa kuɗi da inganta ribar girbi.",
+
+          s5_title: "Ƙarin Kayan Ci gaba",
+          s5_desc:
+            "Yi amfani da NDVI (satellite), tsarin juyawar amfanin gona, simulation, offline mode da rahotanni.",
+
+          how_title: "Yadda SmartFarm ke Aiki",
+          how_desc:
+            "Hanyar aiki mai sauƙi da manomi zai iya fahimta — har ma offline.",
+
+          step1_title: "Shigar da Bayanai",
+          step1_desc:
+            "Shigar da bayanan ƙasa, yanayi, wuri, ko saka hoton shuka/amfanin gona.",
+
+          step2_title: "Aikin AI",
+          step2_desc:
+            "Tsarin yana nazari da bayanai ta hanyar hanyoyin hankali da ƙa’idoji.",
+
+          step3_title: "Samun Hasashe",
+          step3_desc:
+            "Samun sakamakon cuta, bayanan ruwan sama, hasashen amfanin gona da shawarwari.",
+
+          step4_title: "Daukar Mataki",
+          step4_desc:
+            "Bi jadawalin ban-ruwa, takin zamani, kariya daga kwari da tsarin girbi.",
+
+          step5_title: "Bibiya",
+          step5_desc:
+            "Kula da sakamako tsawon lokaci ta dashboards, trends da rahoton PDF.",
+
+          footer_text:
+            "SmartFarm Monitoring & Prediction System — Hausa / Turanci • Offline-ready",
+
+          profile_complete: "Cikakke ✅",
+          profile_incomplete: "Ba cikakke ⚠️",
+          export_alert: "Za a ƙara fitar da rahoto (PDF) nan gaba.",
+
+          // NEW UI TRANSLATIONS
+          notif_header: "Sanarwa",
+          qa_scan: "Duba Cuta",
+          qa_expense: "Rubuta Kashe Kuɗi",
+          qa_sync: "Aika Bayanai",
+          ht_title: "Lafiyar Tsarin & Adadin Amfani",
+        },
+      };
+
+      // ---------------------------
+      // Language logic:
+      // 1) If user profile has lang -> use it
+      // 2) else use localStorage "lang"
+      // 3) else auto-detect by browser language
+      // 4) always allow toggle, and sync toggle back to profile + localStorage
+      // ---------------------------
+      function detectLang() {
+        const nav = (navigator.language || "").toLowerCase();
+        // Hausa language codes sometimes appear as "ha" or "ha-ng"
+        if (nav.startsWith("ha")) return "ha";
+        return "en";
+      }
+
+      let currentLang = localStorage.getItem("lang") || detectLang();
+
+      function applyI18n() {
+        // text content
+        document.querySelectorAll("[data-i18n]").forEach((el) => {
+          const key = el.getAttribute("data-i18n");
+          if (i18n[currentLang]?.[key]) el.textContent = i18n[currentLang][key];
+        });
+
+        // placeholders
+        document.querySelectorAll("[data-i18n-ph]").forEach((el) => {
+          const key = el.getAttribute("data-i18n-ph");
+          if (i18n[currentLang]?.[key])
+            el.setAttribute("placeholder", i18n[currentLang][key]);
+        });
+
+        // language UI
+        langToggle.innerHTML = `<i class="fa-solid fa-language"></i> ${currentLang === "en" ? "English" : "Hausa"}`;
+        langStatus.textContent = currentLang === "en" ? "English" : "Hausa";
+
+        localStorage.setItem("lang", currentLang);
+      }
+
+      async function syncLangToProfile(user, lang) {
+        // Save lang inside users/{uid} so it syncs across devices
+        try {
+          await withTimeout(
+            setDoc(
+              doc(db, "users", user.uid),
+              {
+                lang: lang,
+                updatedAt: serverTimestamp(),
+              },
+              { merge: true },
+            ),
+            7000,
+          );
+        } catch (e) {
+          // offline/blocked — localStorage still works
+        }
+      }
+
+      // ---------------------------
+      // Profile loader (Firestore then local)
+      // ---------------------------
+      function withTimeout(promise, ms = 7000) {
+        return Promise.race([
+          promise,
+          new Promise((_, rej) =>
+            setTimeout(() => rej(new Error("timeout")), ms),
+          ),
+        ]);
+      }
+
+      function loadLocalProfile(uid) {
+        const raw =
+          localStorage.getItem("profile_" + uid) ||
+          localStorage.getItem("profile");
+        if (!raw) return null;
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return null;
+        }
+      }
+
+      async function loadProfile(uid) {
+        try {
+          const snap = await withTimeout(getDoc(doc(db, "users", uid)), 7000);
+          if (snap.exists()) return snap.data();
+        } catch (e) {
+          // fallback
+        }
+        return loadLocalProfile(uid);
+      }
+
+      // ---------------------------
+      // Auth + init
+      // ---------------------------
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+          location.href = "/login/";
+          return;
+        }
+
+        const profile = await loadProfile(user.uid);
+
+        // Choose language from profile if available (highest priority)
+        if (profile?.lang === "en" || profile?.lang === "ha") {
+          currentLang = profile.lang;
+        } else {
+          // if not set in profile, keep currentLang from storage or auto-detect and save
+          await syncLangToProfile(user, currentLang);
+        }
+
+        // apply language to UI
+        applyI18n();
+
+        // show farm + name
+        const farmName = profile?.farmName || "My Farm";
+        const fullName =
+          profile?.fullName || user.displayName || user.email || "User";
+        const isComplete =
+          profile?.profileComplete === true ||
+          localStorage.getItem("profileComplete_" + user.uid) === "true";
+
+        farmMini.textContent = farmName;
+        userPill.innerHTML = `<i class="fa-solid fa-user"></i> ${fullName}`;
+
+        // Update Dynamic Context Box (New feature backend hook)
+        document.getElementById("activeProfile").innerHTML =
+          `Active: ${farmName}`;
+
+        welcomeTitle.textContent = `${i18n[currentLang].welcome_title}, ${farmName}`;
+        profileStatus.textContent = isComplete
+          ? i18n[currentLang].profile_complete
+          : i18n[currentLang].profile_incomplete;
+
+        // Language toggle click (still allow)
+        langToggle.onclick = async () => {
+          currentLang = currentLang === "en" ? "ha" : "en";
+          applyI18n();
+          await syncLangToProfile(user, currentLang);
+          // Update title line again with new language
+          welcomeTitle.textContent = `${i18n[currentLang].welcome_title}, ${farmName}`;
+          profileStatus.textContent = isComplete
+            ? i18n[currentLang].profile_complete
+            : i18n[currentLang].profile_incomplete;
+        };
+      });
+
+      // Sector cards click
+      document.querySelectorAll(".card").forEach((card) => {
+        const go = card.getAttribute("data-go");
+        card.addEventListener("click", () => {
+          if (go) location.href = go;
+        });
+        card.querySelector(".cta").addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (go) location.href = go;
+        });
+      });
+
+      document
+        .getElementById("editProfileBtn")
+        .addEventListener("click", () => {
+          location.href = "/create-profile/";
+        });
+
+      document
+        .getElementById("logoutBtn")
+        .addEventListener("click", async () => {
+          await signOut(auth);
+          location.href = "/login/";
+        });
+
+      // Search filter
+      const searchInput = document.getElementById("searchInput");
+      const sectorGrid = document.getElementById("sectorGrid");
+
+      function filterCards(q) {
+        const query = q.trim().toLowerCase();
+        const cards = [...sectorGrid.querySelectorAll(".card")];
+        cards.forEach((c) => {
+          const keys = (c.getAttribute("data-keywords") || "").toLowerCase();
+          const title = (
+            c.querySelector("h3")?.textContent || ""
+          ).toLowerCase();
+          const desc = (c.querySelector("p")?.textContent || "").toLowerCase();
+          const match =
+            !query ||
+            keys.includes(query) ||
+            title.includes(query) ||
+            desc.includes(query);
+          c.style.display = match ? "" : "none";
+        });
+      }
+      searchInput.addEventListener("input", () =>
+        filterCards(searchInput.value),
+      );
+      document
+        .getElementById("searchBtn")
+        .addEventListener("click", () => filterCards(searchInput.value));
+
+      // Export placeholder
+      document.getElementById("exportBtn").addEventListener("click", (e) => {
+        e.preventDefault();
+        alert(i18n[currentLang].export_alert);
+      });
+    </script>
+  </body>
+</html>

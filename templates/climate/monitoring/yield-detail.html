@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkySense | Yield Analytics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #0b0b10;
+            --sidebar: #111118;
+            --card: #1a1a24;
+            --primary: #7b61ff;
+            --text: #ffffff;
+            --muted: #8b8b9a;
+            --accent: #2ecc71;
+            --border: rgba(255, 255, 255, 0.05);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background-color: var(--bg); color: var(--text); display: flex; min-height: 100vh; overflow-x: hidden; }
+        
+        /* Sidebar */
+        .sidebar { width: 80px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding: 30px 0; gap: 40px; }
+        .nav-item { color: var(--muted); font-size: 20px; cursor: pointer; transition: 0.3s; }
+        .nav-item.active { color: var(--primary); }
+
+        /* Main Content */
+        .main-content { flex: 1; padding: 30px; }
+        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        
+        .user-profile { display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 12px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; }
+
+        /* Analytics Grid */
+        .analytics-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 25px; }
+        @media (max-width: 1000px) { .analytics-grid { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+        .glass-panel { background: var(--card); border-radius: 28px; border: 1px solid var(--border); padding: 30px; position: relative; }
+        
+        /* Stats Styles */
+        .stat-badge { background: var(--accent); color: #000; padding: 6px 15px; border-radius: 20px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; }
+        .big-metric { font-size: 64px; font-weight: 700; margin: 20px 0; color: var(--accent); }
+
+        /* Details List */
+        .details-list { margin-top: 20px; }
+        .detail-row { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid var(--border); }
+        .detail-row span:first-child { color: var(--muted); font-size: 14px; }
+        .detail-row span:last-child { font-weight: 600; }
+
+        .chart-box { margin-top: 30px; height: 300px; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="nav-item"><i class="fa-solid fa-bolt"></i></div>
+        <div class="nav-item active"><i class="fa-solid fa-chart-line"></i></div>
+        <div class="nav-item"><i class="fa-solid fa-house" onclick="location.href='dashboard.html'"></i></div>
+        <div class="nav-item"><i class="fa-solid fa-gear"></i></div>
+    </div>
+
+    <div class="main-content">
+        <div class="header-box">
+            <h2 style="font-weight: 500; font-size: 20px;">Yield Analytics</h2>
+            <div class="user-profile">
+                <span id="profile-name" style="color: var(--muted);">Loading...</span>
+                <div class="user-avatar" id="profile-initial">?</div>
+            </div>
+        </div>
+
+        <div class="analytics-grid">
+            <div class="glass-panel">
+                <div class="stat-badge"><i class="fa-solid fa-seedling"></i> <span id="crop-sync">Loading Crop...</span></div>
+                <div style="font-size: 28px; font-weight: 600; margin-top: 20px;">Total Annual Yield</div>
+                <div class="big-metric" id="total-yield-val">--.-</div>
+                
+                <div class="chart-box">
+                    <canvas id="yieldPerformanceChart"></canvas>
+                </div>
+            </div>
+
+            <div class="glass-panel">
+                <h3 style="margin: 0 0 20px; font-size: 18px; font-weight: 500;">Performance Details</h3>
+                
+                <div class="details-list">
+                    <div class="detail-row">
+                        <span>Expected Yield (Tons)</span>
+                        <span id="expected-val">--</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Harvest Area (Hectares)</span>
+                        <span id="area-val">--</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Efficiency Rating</span>
+                        <span id="efficiency-val" style="color: var(--accent);">--%</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Last Harvest Date</span>
+                        <span id="last-harvest">--/--/--</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: 40px; padding: 20px; background: rgba(123, 97, 255, 0.05); border-radius: 20px; border: 1px solid var(--primary);">
+                    <h4 style="margin: 0 0 10px; font-size: 14px; color: var(--primary);">System Prediction</h4>
+                    <p style="margin:0; font-size: 13px; color: var(--muted);" id="prediction-text">Syncing with ML model for next harvest estimate...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DEVELOPER NOTE: Target these IDs for dynamic updates:
+        // profile-name, profile-initial, crop-sync, total-yield-val, 
+        // expected-val, area-val, efficiency-val, last-harvest, prediction-text
+
+        const ctx = document.getElementById('yieldPerformanceChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['2022', '2023', '2024', '2025', '2026'],
+                datasets: [{
+                    label: 'Yield (Tons)',
+                    data: [0, 0, 0, 0, 0], // Developer: Inject historical data array here
+                    backgroundColor: '#7b61ff',
+                    borderRadius: 10,
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { legend: { display: false } }, 
+                scales: { 
+                    x: { ticks: { color: '#8b8b9a' }, grid: { display: false } }, 
+                    y: { ticks: { color: '#8b8b9a' }, grid: { color: 'rgba(255,255,255,0.05)' } } 
+                } 
+            }
+        });
+    </script>
+</body>
+</html>

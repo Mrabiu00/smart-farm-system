@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Harvest Timeline</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --warning: #f1c40f; --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 24px; overflow-x: hidden; }
+        .container { max-width: 1050px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 950px) { .layout-grid { grid-template-columns: 1fr 1.2fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); height: fit-content; }
+
+        /* Countdown Widget */
+        .countdown-box { text-align: center; padding: 40px 20px; background: rgba(46, 204, 113, 0.05); border: 1px dashed var(--accent); border-radius: 24px; margin-bottom: 25px; }
+        .days-val { font-size: 72px; font-weight: 800; color: var(--accent); line-height: 1; margin: 10px 0; text-shadow: 0 0 20px rgba(46, 204, 113, 0.2); }
+        .days-label { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; }
+
+        /* Progress Bar */
+        .progress-container { width: 100%; background: rgba(255,255,255,0.05); border-radius: 10px; height: 12px; margin-top: 15px; overflow: hidden; border: 1px solid var(--border); }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 10px; transition: width 1s ease-in-out; }
+
+        /* Data List */
+        .data-list { margin-top: 30px; }
+        .data-row { display: flex; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--border); }
+        .data-row:last-child { border-bottom: none; }
+        .data-row span:first-child { color: var(--muted); font-size: 13px; }
+        .data-row span:last-child { font-weight: 600; font-size: 14px; }
+
+        .chart-container { height: 220px; width: 100%; margin-top: 20px; }
+
+        /* Optimization Alert */
+        .opt-alert { background: rgba(123, 97, 255, 0.1); border-left: 4px solid var(--primary); padding: 20px; border-radius: 12px; margin-top: 25px; }
+        .opt-title { color: var(--primary); font-size: 14px; font-weight: 600; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/automation/smart-task/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Sector 2</a>
+            <h1 style="margin:0; font-size: 28px; font-weight: 600;">Harvest Timeline</h1>
+        </div>
+        <div style="text-align: right;">
+            <div id="db-status" style="font-size: 12px; color: var(--accent);"><i class="fa-solid fa-database"></i> Tracker Active</div>
+            <div id="farm-block-display" style="font-size: 14px; color: var(--muted); margin-top: 5px;">Loading Farm Block...</div>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-hourglass-half" style="color:var(--accent); margin-right: 10px;"></i> Readiness Tracker</h3>
+            
+            <div class="countdown-box">
+                <div class="days-label">Estimated Time</div>
+                <div class="days-val" id="countdown-days">--</div>
+                <div style="font-size: 18px; font-weight: 500;" id="crop-focus-val">Target: Syncing Crop...</div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar" id="growth-progress" style="width: 0%;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 8px;">
+                    <span>Planted</span>
+                    <span id="progress-percent-val">0% Matured</span>
+                </div>
+            </div>
+
+            <div class="data-list">
+                <div class="data-row">
+                    <span>Current Growth Stage</span>
+                    <span id="stage-val" style="color: var(--warning);">Calculating...</span>
+                </div>
+                <div class="data-row">
+                    <span>Expected Yield</span>
+                    <span id="yield-est-val">-- Tons</span>
+                </div>
+                <div class="data-row">
+                    <span>Initial Planting Date</span>
+                    <span id="plant-date-val">--/--/----</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-chart-line" style="color:var(--primary); margin-right: 10px;"></i> Optimal Harvest Window</h3>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Analyzing historical growth curves to predict the exact date for maximum crop quality.</p>
+
+            <div class="chart-container">
+                <canvas id="harvestCurveChart"></canvas>
+            </div>
+
+            <div class="opt-alert">
+                <div class="opt-title"><i class="fa-solid fa-lightbulb"></i> AI Recommendation</div>
+                <p style="margin: 0; font-size: 13px; line-height: 1.6; color: var(--muted);" id="ai-harvest-advice">
+                    Awaiting sufficient growth data to generate harvest strategy. Please ensure the Planting Module is fully synced.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // BACKEND DEVELOPER INTERFACE
+    // Target IDs for software data binding:
+    // User/Location: farm-block-display
+    // Countdown: countdown-days, crop-focus-val, growth-progress (style.width), progress-percent-val
+    // Metrics: stage-val, yield-est-val, plant-date-val
+    // AI Output: ai-harvest-advice
+    
+    // Growth & Quality Curve Chart
+    const ctx = document.getElementById('harvestCurveChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Week 8', 'Week 9', 'Week 10 (Now)', 'Week 11', 'Week 12'],
+            datasets: [{
+                label: 'Crop Quality Index',
+                data: [40, 65, 85, 98, 70], // Backend Dev: Inject predictive quality array. Peak represents ideal harvest.
+                borderColor: '#7b61ff',
+                backgroundColor: 'rgba(123, 97, 255, 0.1)',
+                fill: true, tension: 0.4, pointRadius: [0, 0, 5, 0, 0], pointBackgroundColor: '#2ecc71'
+            }]
+        },
+        options: { 
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { 
+                x: { ticks: { color: '#8b8b9a', font: {size: 11} }, grid: { display: false } },
+                y: { display: false }
+            }
+        }
+    });
+
+    // Example of how backend will update the progress bar visually
+    // document.getElementById('growth-progress').style.width = '85%';
+    // document.getElementById('progress-percent-val').innerText = '85% Matured';
+</script>
+
+</body>
+</html>

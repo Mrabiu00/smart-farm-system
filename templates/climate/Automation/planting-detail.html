@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Planting Schedule</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 24px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .glass-panel { 
+            background: var(--card); border: 1px solid var(--border); border-radius: 28px; 
+            padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); 
+        }
+
+        /* Timeline UI */
+        .timeline { position: relative; padding-left: 30px; margin-top: 20px; }
+        .timeline::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--border); }
+
+        .schedule-item { 
+            background: rgba(255,255,255,0.02); border: 1px solid var(--border); 
+            border-radius: 20px; padding: 25px; margin-bottom: 25px; position: relative;
+            transition: 0.3s ease;
+        }
+        .schedule-item:hover { border-color: var(--primary); background: rgba(123,97,255,0.03); }
+        .schedule-item::after { 
+            content: ''; position: absolute; left: -36px; top: 32px; 
+            width: 12px; height: 12px; background: var(--bg); border: 3px solid var(--primary); border-radius: 50%; 
+        }
+
+        .date-badge { color: var(--primary); font-weight: 600; font-size: 12px; text-transform: uppercase; margin-bottom: 8px; display: block; }
+        .crop-title { font-size: 20px; font-weight: 600; margin-bottom: 10px; }
+        .meta-info { display: flex; gap: 20px; font-size: 13px; color: var(--muted); }
+        .meta-info i { margin-right: 5px; color: var(--accent); }
+
+        .status-pill { 
+            background: rgba(46, 204, 113, 0.1); color: var(--accent); 
+            padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; 
+            position: absolute; top: 25px; right: 25px; 
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/automation/smart-task/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Sector 2</a>
+            <h1 style="margin:0; font-size: 28px;">AI Planting Timeline</h1>
+        </div>
+        <div style="text-align: right;">
+            <div id="sync-status" style="font-size: 12px; color: var(--accent);"><i class="fa-solid fa-cloud-check"></i> Cloud Synced</div>
+            <div id="user-display" style="font-size: 14px; color: var(--muted); margin-top: 5px;">Loading User...</div>
+        </div>
+    </div>
+
+    <div class="glass-panel">
+        <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-seedling" style="color:var(--accent); margin-right: 10px;"></i> Optimized Crop Cycles</h3>
+        <p style="color: var(--muted); font-size: 14px; margin-bottom: 40px;">Predictive planting dates based on regional soil analysis and weather patterns.</p>
+
+        <div class="timeline" id="planting-container">
+            <div class="schedule-item">
+                <span class="status-pill" id="cycle-status-1">Syncing...</span>
+                <span class="date-badge" id="date-val-1">-- -- ----</span>
+                <div class="crop-title" id="crop-val-1">Detecting Optimal Crop...</div>
+                <div class="meta-info">
+                    <span><i class="fa-solid fa-temperature-half"></i> <span id="temp-sync-1">--°C Avg</span></span>
+                    <span><i class="fa-solid fa-droplet"></i> <span id="moisture-sync-1">--% Moisture</span></span>
+                </div>
+            </div>
+
+            </div>
+
+        <div style="margin-top: 40px; padding: 25px; background: rgba(123, 97, 255, 0.05); border-radius: 20px; border: 1px dashed var(--primary);">
+            <h4 style="margin: 0 0 10px; font-size: 14px; color: var(--primary);"><i class="fa-solid fa-microchip"></i> System Note</h4>
+            <p style="margin: 0; font-size: 12px; line-height: 1.6; color: var(--muted);">
+                Dates are calculated using a 400L Software Engineering prediction model. 
+                The system re-evaluates the cycle every 6 hours based on real-time API feedback.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Fetch data dynamically from Django
+    async function loadPlantingData() {
+        try {
+            const response = await fetch('/api/get-planting-cycles/');
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                renderTimeline(result.cycles);
+            }
+        } catch (error) {
+            console.error("Failed to load planting data:", error);
+        }
+    }
+
+    // 2. Render Timeline with dynamic data
+    function renderTimeline(cycles) {
+        const container = document.getElementById('planting-container');
+        container.innerHTML = ''; 
+
+        cycles.forEach(cycle => {
+            const div = document.createElement('div');
+            div.className = 'timeline-item';
+            // ... (keep your existing styling logic here) ...
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 16px;">${cycle.crop}</div>
+                        <div style="font-size: 12px; color: var(--muted);">${cycle.date}</div>
+                    </div>
+                    <div style="background: rgba(123, 97, 255, 0.1); color: var(--primary); padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;">
+                        ${cycle.status}
+                    </div>
+                </div>
+                <div style="display: flex; gap: 20px; margin-top: 15px;">
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+                        <i class="fa-solid fa-temperature-half" style="color: #e74c3c;"></i>
+                        <span id="temp-sync-${cycle.id}">${cycle.temp}°C</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+                        <i class="fa-solid fa-droplet" style="color: #3498db;"></i>
+                        <span id="moisture-sync-${cycle.id}">${cycle.moisture}%</span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    // Initial load
+    loadPlantingData();
+</script>
+
+</body>
+</html>

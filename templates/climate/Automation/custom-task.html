@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Task Creator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --danger: #e74c3c; /* Added danger color for delete button */
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 40px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 900px) { .layout-grid { grid-template-columns: 1.2fr 1.8fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 30px; height: fit-content; }
+
+        /* Custom Task Form */
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+        .form-group input, .form-group select { 
+            width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border); 
+            padding: 14px; border-radius: 12px; color: white; outline: none; 
+        }
+        .form-group input:focus { border-color: var(--primary); }
+
+        .btn-create { 
+            width: 100%; background: var(--primary); color: white; border: none; 
+            padding: 16px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s;
+        }
+        .btn-create:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(123, 97, 255, 0.2); }
+
+        /* Task List UI */
+        .task-list { margin-top: 20px; }
+        .task-item { 
+            background: rgba(255,255,255,0.02); border: 1px solid var(--border); 
+            border-radius: 16px; padding: 15px; display: flex; align-items: center; 
+            gap: 15px; margin-bottom: 15px; transition: 0.3s;
+        }
+        .task-item:hover { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); }
+        .task-checkbox { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .task-info { flex: 1; }
+        .task-date { font-size: 11px; color: var(--muted); }
+        
+        /* New Delete Icon Style */
+        .delete-btn { color: var(--danger); cursor: pointer; padding: 5px; transition: 0.3s; opacity: 0.7; }
+        .delete-btn:hover { opacity: 1; transform: scale(1.1); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-box">
+        <a href="/automation/smart-task/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Automation</a>
+        <h1 style="margin:0; font-size: 26px;">Planting & Task Manager</h1>
+    </div>
+
+    <div class="layout-grid">
+        <div class="glass-panel">
+            <h3 style="margin-top:0;"><i class="fa-solid fa-plus-circle"></i> Create Custom Task</h3>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 25px;">Add a manually scheduled task for your farm.</p>
+            
+            <div class="form-group">
+                <label>Task Name</label>
+                <input type="text" id="task-name" placeholder="e.g., Weed Sector 4">
+            </div>
+            <div class="form-group">
+                <label>Task Category</label>
+                <select id="task-cat">
+                    <option value="planting">Planting</option>
+                    <option value="irrigation">Irrigation</option>
+                    <option value="fertilizer">Fertilizer</option>
+                    <option value="harvest">Harvest</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Execution Date</label>
+                <input type="date" id="task-date">
+            </div>
+            
+            <button class="btn-create" id="add-task-btn">Add to Schedule</button>
+        </div>
+
+        <div class="glass-panel">
+            <h3 style="margin-top:0;"><i class="fa-solid fa-calendar-day"></i> Active Farm Schedule</h3>
+            <div class="task-list" id="task-container">
+                <!-- JavaScript will dynamically render tasks here -->
+            </div>
+            <p style="font-size: 11px; color: var(--muted); text-align: center; margin-top: 20px;">
+                <i class="fa-solid fa-info-circle"></i> Custom tasks are stored in your profile and synced offline.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. DEFINE: Initialize the array safely from persistent storage
+    let tasks = [];
+    const savedData = localStorage.getItem('smartFarmTasks');
+    
+    if (savedData) {
+        tasks = JSON.parse(savedData);
+    } else {
+        // Seed initial data if memory is completely blank
+        tasks = [{
+            name: "AI: Optimal Planting (Maize)",
+            source: "Synced from Weather API",
+            date: "Today",
+            badge: "AI Recommended",
+            isAi: true
+        }];
+        localStorage.setItem('smartFarmTasks', JSON.stringify(tasks));
+    }
+
+    // 2. EXPLAIN: Render function that builds the HTML string safely
+    function renderTasks() {
+        const container = document.getElementById('task-container');
+        container.innerHTML = ''; 
+
+        if (tasks.length === 0) {
+            container.innerHTML = '<p style="color: var(--muted); font-size: 13px; text-align: center; padding: 20px 0;">All tasks completed. Schedule is clear.</p>';
+            return;
+        }
+
+        tasks.forEach((task, index) => {
+            const badgeBg = task.isAi ? 'rgba(46,204,113,0.1)' : 'rgba(123, 97, 255, 0.1)';
+            const badgeColor = task.isAi ? 'var(--accent)' : 'var(--primary)';
+            
+            container.innerHTML += `
+                <div class="task-item" id="task-${index}">
+                    <div class="task-checkbox" onclick="completeTask(${index})" title="Mark Complete">
+                        <i class="fa-solid fa-check" id="check-${index}" style="font-size:12px; display:none;"></i>
+                    </div>
+                    <div class="task-info">
+                        <div style="font-weight: 600;">${task.name}</div>
+                        <div class="task-date">${task.source} • ${task.date}</div>
+                    </div>
+                    <span style="font-size:10px; color:${badgeColor}; background:${badgeBg}; padding:4px 8px; border-radius:10px; margin-right: 15px;">${task.badge}</span>
+                    <i class="fa-solid fa-trash delete-btn" onclick="deleteTask(${index})" title="Delete Task"></i>
+                </div>
+            `;
+        });
+    }
+
+    // 3. LIST: Dedicated logic for deleting items
+    function deleteTask(index) {
+        if(confirm("Are you sure you want to delete this task?")) {
+            tasks.splice(index, 1); // Remove the item from array
+            localStorage.setItem('smartFarmTasks', JSON.stringify(tasks)); // Save new array
+            renderTasks(); // Re-draw UI
+        }
+    }
+
+    // 4. LIST: Logic for completing items via the checkbox
+    function completeTask(index) {
+        document.getElementById(`check-${index}`).style.display = 'block';
+        setTimeout(() => {
+            tasks.splice(index, 1);
+            localStorage.setItem('smartFarmTasks', JSON.stringify(tasks));
+            renderTasks();
+        }, 400); 
+    }
+
+    // 5. EXPLAIN: Adding a new task safely
+    document.getElementById('add-task-btn').addEventListener('click', function() {
+        const nameInput = document.getElementById('task-name').value;
+        const catInput = document.getElementById('task-cat').value;
+        const dateInput = document.getElementById('task-date').value;
+
+        if (!nameInput || !dateInput) {
+            alert("Please define the Task Name and Execution Date.");
+            return;
+        }
+
+        tasks.push({
+            name: nameInput,
+            source: `Manual Entry (${catInput})`,
+            date: dateInput,
+            badge: "Custom Task",
+            isAi: false
+        });
+
+        localStorage.setItem('smartFarmTasks', JSON.stringify(tasks));
+        renderTasks();
+
+        // Clear input fields
+        document.getElementById('task-name').value = '';
+        document.getElementById('task-date').value = '';
+    });
+
+    // Run initial functions when the page loads
+    renderTasks();
+    
+    // Auto-sync function for Django Weather API (Awaiting Backend)
+    async function syncWeatherAPI() {
+        try {
+            const response = await fetch('/api/get-weather-tasks/');
+            const data = await response.json();
+            if (data.status === 'success') {
+                const taskExists = tasks.some(t => t.name === data.task.name);
+                if (!taskExists) {
+                    tasks.push({ name: data.task.name, source: data.task.source, date: data.task.date, badge: "AI Recommended", isAi: true });
+                    localStorage.setItem('smartFarmTasks', JSON.stringify(tasks));
+                    renderTasks();
+                }
+            }
+        } catch (error) { console.log("Awaiting Django weather API endpoint..."); }
+    }
+    syncWeatherAPI();
+</script>
+
+</body>
+</html>
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Task Creator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 40px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 900px) { .layout-grid { grid-template-columns: 1.2fr 1.8fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 30px; height: fit-content; }
+
+        /* Custom Task Form */
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+        .form-group input, .form-group select { 
+            width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border); 
+            padding: 14px; border-radius: 12px; color: white; outline: none; 
+        }
+        .form-group input:focus { border-color: var(--primary); }
+
+        .btn-create { 
+            width: 100%; background: var(--primary); color: white; border: none; 
+            padding: 16px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s;
+        }
+        .btn-create:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(123, 97, 255, 0.2); }
+
+        /* Task List UI */
+        .task-list { margin-top: 20px; }
+        .task-item { 
+            background: rgba(255,255,255,0.02); border: 1px solid var(--border); 
+            border-radius: 16px; padding: 15px; display: flex; align-items: center; 
+            gap: 15px; margin-bottom: 15px; transition: 0.3s;
+        }
+        .task-item:hover { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); }
+        .task-checkbox { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .task-info { flex: 1; }
+        .task-date { font-size: 11px; color: var(--muted); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-box">
+        <a href="/automation/smart-task/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Automation</a>
+        <h1 style="margin:0; font-size: 26px;">Planting & Task Manager</h1>
+    </div>
+
+    <div class="layout-grid">
+        <div class="glass-panel">
+            <h3 style="margin-top:0;"><i class="fa-solid fa-plus-circle"></i> Create Custom Task</h3>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 25px;">Add a manually scheduled task for your farm.</p>
+            
+            <div class="form-group">
+                <label>Task Name</label>
+                <input type="text" id="task-name" placeholder="e.g., Weed Sector 4">
+            </div>
+            <div class="form-group">
+                <label>Task Category</label>
+                <select id="task-cat">
+                    <option value="planting">Planting</option>
+                    <option value="irrigation">Irrigation</option>
+                    <option value="fertilizer">Fertilizer</option>
+                    <option value="harvest">Harvest</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Execution Date</label>
+                <input type="date" id="task-date">
+            </div>
+            
+            <button class="btn-create" id="add-task-btn">Add to Schedule</button>
+        </div>
+
+        <div class="glass-panel">
+            <h3 style="margin-top:0;"><i class="fa-solid fa-calendar-day"></i> Active Farm Schedule</h3>
+            <div class="task-list" id="task-container">
+                <div class="task-item">
+                    <div class="task-checkbox"><i class="fa-solid fa-check" style="font-size:12px; display:none;"></i></div>
+                    <div class="task-info">
+                        <div style="font-weight: 600;">AI: Optimal Planting (Maize)</div>
+                        <div class="task-date">Synced from Weather API • Today</div>
+                    </div>
+                    <span style="font-size:10px; color:var(--accent); background:rgba(46,204,113,0.1); padding:4px 8px; border-radius:10px;">AI Recommended</span>
+                </div>
+
+                </div>
+            <p style="font-size: 11px; color: var(--muted); text-align: center; margin-top: 20px;">
+                <i class="fa-solid fa-info-circle"></i> Custom tasks are stored in your profile and synced offline.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // DEFINE: Load tasks from persistent storage.
+    let tasks = JSON.parse(localStorage.getItem('smartFarmTasks')) || [];
+
+    // EXPLAIN: Function to dynamically render the UI
+    function renderTasks() {
+        const container = document.getElementById('task-container');
+        container.innerHTML = ''; 
+
+        if (tasks.length === 0) {
+            container.innerHTML = '<p style="color: var(--muted); font-size: 13px; text-align: center;">All tasks completed. Schedule is clear.</p>';
+            return;
+        }
+
+        tasks.forEach((task, index) => {
+            const badgeBg = task.isAi ? 'rgba(46,204,113,0.1)' : 'rgba(123, 97, 255, 0.1)';
+            const badgeColor = task.isAi ? 'var(--accent)' : 'var(--primary)';
+            
+            container.innerHTML += `
+                <div class="task-item" id="task-${index}">
+                    <div class="task-checkbox" onclick="completeTask(${index})">
+                        <i class="fa-solid fa-check" id="check-${index}" style="font-size:12px; display:none;"></i>
+                    </div>
+                    <div class="task-info">
+                        <div style="font-weight: 600;">${task.name}</div>
+                        <div class="task-date">${task.source} • ${task.date}</div>
+                    </div>
+                    <span style="font-size:10px; color:${badgeColor}; background:${badgeBg}; padding:4px 8px; border-radius:10px;">${task.badge}</span>
+                </div>
+            `;
+        });
+    }
+
+    // EXPLAIN: Live Backend Sync for Weather API
+    async function syncWeatherAPI() {
+        try {
+            // The frontend asks Django for weather-based recommendations
+            const response = await fetch('/api/get-weather-tasks/');
+            const data = await response.json();
+
+            // If Django detects good weather/soil conditions, it returns a task
+            if (data.status === 'success') {
+                // Check if this AI task already exists so we don't duplicate it
+                const taskExists = tasks.some(t => t.name === data.task.name);
+                
+                if (!taskExists) {
+                    tasks.push({
+                        name: data.task.name,          // e.g., "AI: Optimal Planting (Maize)"
+                        source: data.task.source,      // e.g., "Synced from Weather API"
+                        date: data.task.date,          // e.g., "Today"
+                        badge: "AI Recommended",
+                        isAi: true
+                    });
+                    localStorage.setItem('smartFarmTasks', JSON.stringify(tasks));
+                    renderTasks();
+                }
+            }
+        } catch (error) {
+            console.log("Awaiting Django weather endpoint integration...", error);
+        }
+    }
+
+    // LIST: Complete task logic
+    function completeTask(index) {
+        document.getElementById(`check-${index}`).style.display = 'block';
+        setTimeout(() => {
+            tasks.splice(index, 1);
+            localStorage.setItem('smartFarmTasks', JSON.stringify(tasks));
+            renderTasks();
+        }, 400); 
+    }
+
+    // LIST: Add custom manual task
+    document.getElementById('add-task-btn').addEventListener('click', function() {
+        const nameInput = document.getElementById('task-name').value;
+        const catInput = document.getElementById('task-cat').value;
+        const dateInput = document.getElementById('task-date').value;
+
+        if (!nameInput || !dateInput) {
+            alert("Please define the Task Name and Execution Date.");
+            return;
+        }
+
+        tasks.push({
+            name: nameInput,
+            source: `Manual Entry (${catInput})`,
+            date: dateInput,
+            badge: "Custom Task",
+            isAi: false
+        });
+
+        localStorage.setItem('smartFarmTasks', JSON.stringify(tasks));
+        renderTasks();
+
+        document.getElementById('task-name').value = '';
+        document.getElementById('task-date').value = '';
+    });
+
+    // Run initial functions when the page loads
+    renderTasks();
+    syncWeatherAPI(); // Automatically checks for weather updates on load!
+</script>
+
+</body>
+</html> -->

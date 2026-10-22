@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SkySense | Weather Intelligence</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        --bg: #0b0b10;
+        --sidebar: #111118;
+        --card: #1a1a24;
+        --primary: #7b61ff;
+        --text: #ffffff;
+        --muted: #8b8b9a;
+        --border: rgba(255, 255, 255, 0.05);
+      }
+      body {
+        margin: 0;
+        font-family: "Poppins", sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        display: flex;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 80px;
+        background: var(--sidebar);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 30px 0;
+        gap: 40px;
+      }
+      .nav-item {
+        color: var(--muted);
+        font-size: 20px;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+      .nav-item.active {
+        color: var(--primary);
+      }
+
+      /* Main Content */
+      .main-content {
+        flex: 1;
+        padding: 30px;
+      }
+      .header-box {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+      }
+
+      .user-profile {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+      }
+
+      /* Dashboard Grid */
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 25px;
+      }
+      @media (max-width: 1000px) {
+        .dashboard-grid {
+          grid-template-columns: 1fr;
+        }
+        .sidebar {
+          display: none;
+        }
+      }
+
+      .glass-panel {
+        background: var(--card);
+        border-radius: 28px;
+        border: 1px solid var(--border);
+        padding: 30px;
+        position: relative;
+      }
+
+      /* Weather Styles */
+      .location-badge {
+        background: var(--primary);
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .temp-display {
+        font-size: 82px;
+        font-weight: 700;
+        margin: 30px 0;
+      }
+      .condition-box {
+        position: absolute;
+        top: 40px;
+        right: 40px;
+        text-align: right;
+      }
+      .condition-box i {
+        font-size: 80px;
+        color: #f1c40f;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      /* Highlights */
+      .highlights-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-top: 20px;
+      }
+      .h-card {
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 20px;
+        padding: 20px;
+        border: 1px solid var(--border);
+      }
+      .h-card small {
+        color: var(--muted);
+        display: block;
+        margin-bottom: 8px;
+        font-size: 11px;
+        text-transform: uppercase;
+      }
+      .h-val {
+        font-size: 22px;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sidebar">
+      <div class="nav-item"><i class="fa-solid fa-bolt"></i></div>
+      <div class="nav-item active"><i class="fa-solid fa-house"></i></div>
+      <div class="nav-item"><i class="fa-solid fa-chart-pie"></i></div>
+      <div class="nav-item"><i class="fa-solid fa-location-dot"></i></div>
+      <div class="nav-item"><i class="fa-solid fa-gear"></i></div>
+    </div>
+
+    <div class="main-content">
+      <div class="header-box">
+        <h2 style="font-weight: 500; font-size: 20px">Weather Insights</h2>
+        <div class="user-profile">
+          <span id="display-name" style="color: var(--muted)"
+            >{{ request.user.username|title|default:"Admin" }}</span
+          >
+          <div class="user-avatar" id="user-initial">?</div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="glass-panel">
+          <div class="location-badge">
+            <i class="fa-solid fa-location-arrow"></i>
+            <span id="loc-text">{{ city }}</span>
+          </div>
+          <div
+            id="day-text"
+            style="font-size: 32px; font-weight: 600; margin-top: 20px"
+          >
+            ----
+          </div>
+          <div id="date-text" style="color: var(--muted); font-size: 14px">
+            -- -- ----
+          </div>
+
+          <div class="temp-display" id="main-temp">{{ temp }}°C</div>
+
+          <div class="condition-box">
+            <i class="fa-solid fa-cloud-sun" id="main-icon"></i>
+            <div id="cond-desc" style="font-weight: 600; font-size: 18px">
+              {{ condition }}
+            </div>
+          </div>
+
+          <div
+            style="
+              border-top: 1px solid var(--border);
+              padding-top: 25px;
+              margin-top: 20px;
+            "
+          >
+            <h4 style="margin: 0 0 15px; font-weight: 500; color: var(--muted)">
+              Hourly Trend
+            </h4>
+            <div style="height: 120px"><canvas id="hourlyChart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="glass-panel">
+          <h3 style="margin: 0 0 20px; font-size: 18px; font-weight: 500">
+            Today's Highlights
+          </h3>
+          <div class="highlights-grid">
+            <div class="h-card">
+              <small>Chance of Rain</small>
+              <div class="h-val" id="rain-val">{{ rain_chance}}%</div>
+            </div>
+            <div class="h-card">
+              <small>UV Index</small>
+              <div class="h-val" id="uv-val">--</div>
+            </div>
+            <div class="h-card">
+              <small>Wind Speed</small>
+              <div class="h-val" id="wind-val">{{ wind_speed }}km/h</div>
+            </div>
+            <div class="h-card">
+              <small>Humidity</small>
+              <div class="h-val" id="humid-val">{{ humidity }}%</div>
+            </div>
+            <div class="h-card" style="grid-column: span 2">
+              <small>Sunrise & Sunset</small>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-around;
+                  margin-top: 10px;
+                "
+              >
+                <div>🌅 <span id="sunrise">{{ sunrise }}</span></div>
+                <div>🌇 <span id="sunset">{{ sunset }}</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // DEVELOPER NOTE: Target these IDs for dynamic updates:
+      // display-name, user-initial, loc-text, day-text, date-text, main-temp, cond-desc,
+      // rain-val, uv-val, wind-val, humid-val, sunrise, sunset
+
+      const ctx = document.getElementById('hourlyChart').getContext('2d');
+      new Chart(ctx, {
+          type: 'line',
+          data: {
+              labels: ['1pm', '2pm', '3pm', '4pm', '5pm', '6pm'],
+              datasets: [{
+                  data: {{ chart_data|safe }}, // Developer: Inject forecast array here
+                  borderColor: '#7b61ff',
+                  backgroundColor: 'rgba(123, 97, 255, 0.05)',
+                  fill: true, tension: 0.4, pointRadius: 0
+              }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
+      });
+    </script>
+  </body>
+</html>

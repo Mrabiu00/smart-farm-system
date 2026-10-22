@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Model Health</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --warning: #f1c40f; --danger: #e74c3c; --info: #3498db;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 24px; overflow-x: hidden; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 950px) { .layout-grid { grid-template-columns: 1.2fr 1fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); height: fit-content; }
+
+        /* Accuracy Bars */
+        .model-stat { margin-bottom: 25px; }
+        .model-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .model-name { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .model-score { font-size: 13px; font-weight: 700; color: var(--primary); }
+        
+        .progress-track { width: 100%; height: 8px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 10px; transition: width 1s ease-in-out; }
+        
+        .meta-tags { display: flex; gap: 10px; margin-top: 8px; }
+        .meta-tag { font-size: 10px; padding: 3px 8px; border-radius: 8px; background: rgba(255,255,255,0.03); color: var(--muted); border: 1px solid var(--border); }
+
+        /* System Logs */
+        .log-container { background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 16px; padding: 20px; max-height: 250px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 12px; margin-bottom: 25px; }
+        .log-entry { margin-bottom: 10px; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 10px; color: var(--muted); }
+        .log-entry:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .log-time { color: var(--primary); margin-right: 10px; }
+        .log-status.ok { color: var(--accent); }
+        .log-status.warn { color: var(--warning); }
+
+        .btn-retrain { 
+            width: 100%; background: transparent; color: var(--text); border: 1px solid var(--border); 
+            padding: 16px; border-radius: 14px; font-weight: 600; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-retrain:hover { background: rgba(123, 97, 255, 0.1); border-color: var(--primary); color: var(--primary); }
+
+        .chart-wrapper { height: 200px; width: 100%; margin-top: 25px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/ai/image-main/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to AI Hub</a>
+            <h1 style="margin:0; font-size: 28px; font-weight: 600;">ML Model Health</h1>
+        </div>
+        <div style="text-align: right;">
+            <div id="server-status" style="font-size: 12px; color: var(--accent);"><i class="fa-solid fa-server"></i> All Systems Operational</div>
+            <div id="last-ping" style="font-size: 14px; color: var(--muted); margin-top: 5px;">Ping: 24ms</div>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-bullseye" style="color:var(--primary); margin-right: 10px;"></i> Diagnostic Accuracy</h3>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 30px;">Real-time confidence metrics for active predictive models.</p>
+
+            <div class="model-stat">
+                <div class="model-header">
+                    <div class="model-name"><i class="fa-solid fa-camera-viewfinder" style="color: var(--info);"></i> Vision API (Disease Match)</div>
+                    <div class="model-score" id="acc-vision-val">94.2%</div>
+                </div>
+                <div class="progress-track"><div class="progress-fill" style="width: 94.2%; background: var(--info);"></div></div>
+                <div class="meta-tags">
+                    <span class="meta-tag" id="vision-dataset">Dataset: 12,400 imgs</span>
+                    <span class="meta-tag" id="vision-status">Status: Active</span>
+                </div>
+            </div>
+
+            <div class="model-stat">
+                <div class="model-header">
+                    <div class="model-name"><i class="fa-solid fa-leaf" style="color: var(--accent);"></i> Crop Suggestion Logic</div>
+                    <div class="model-score" id="acc-crop-val">88.5%</div>
+                </div>
+                <div class="progress-track"><div class="progress-fill" style="width: 88.5%; background: var(--accent);"></div></div>
+                <div class="meta-tags">
+                    <span class="meta-tag" id="crop-dataset">Dataset: NPK Vectors</span>
+                    <span class="meta-tag" id="crop-status">Status: Active</span>
+                </div>
+            </div>
+
+            <div class="model-stat">
+                <div class="model-header">
+                    <div class="model-name"><i class="fa-solid fa-satellite" style="color: var(--warning);"></i> Suitability Forecaster</div>
+                    <div class="model-score" id="acc-suit-val" style="color: var(--warning);">76.1%</div>
+                </div>
+                <div class="progress-track"><div class="progress-fill" style="width: 76.1%; background: var(--warning);"></div></div>
+                <div class="meta-tags">
+                    <span class="meta-tag" id="suit-dataset">Dataset: Geospatial API</span>
+                    <span class="meta-tag" id="suit-status">Status: Retraining Needed</span>
+                </div>
+            </div>
+            
+            <button class="btn-retrain" id="btn-trigger-training"><i class="fa-solid fa-rotate"></i> Initialize Batch Retraining</button>
+        </div>
+
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-network-wired" style="color:var(--accent); margin-right: 10px;"></i> Network & API Health</h3>
+            
+            <h4 style="font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;">API Response Latency (ms)</h4>
+            <div class="chart-wrapper">
+                <canvas id="latencyChart"></canvas>
+            </div>
+
+            <h4 style="font-size: 11px; color: var(--muted); text-transform: uppercase; margin-top: 30px; margin-bottom: 10px; letter-spacing: 1px;">Backend Execution Log</h4>
+            <div class="log-container" id="terminal-log">
+                <div class="log-entry"><span class="log-time">[14:02:11]</span> [SYS] Connected to Firebase Auth database. <span class="log-status ok">OK</span></div>
+                <div class="log-entry"><span class="log-time">[14:05:30]</span> [API] Vision Model prediction request received. <span class="log-status ok">200 OK</span></div>
+                <div class="log-entry"><span class="log-time">[14:05:32]</span> [ML] Inference completed in 1.4s. Confidence: 0.94.</div>
+                <div class="log-entry"><span class="log-time">[14:10:05]</span> [API] Soil Fertility API latency spike detected. <span class="log-status warn">WARN</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    // 1. Initialize the Live Latency Chart
+    const ctx = document.getElementById('latencyChart').getContext('2d');
+    window.latencyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['-25s', '-20s', '-15s', '-10s', '-5s', 'Now'],
+            datasets: [{
+                label: 'Response Time (ms)',
+                data: [40, 40, 40, 40, 40, 40], // Default baseline
+                borderColor: '#2ecc71',
+                backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3,
+                pointBackgroundColor: '#07070a',
+                pointBorderColor: '#2ecc71'
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { ticks: { color: '#8b8b9a', font: {size: 10} }, grid: { display: false } },
+                y: { ticks: { color: '#8b8b9a', font: {size: 10} }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true, max: 100 }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // 2. The Autonomous Telemetry Fetcher
+    async function fetchLiveHealthMetrics() {
+        try {
+            const response = await fetch('/api/system-health/');
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                // Update Top Ping Meta
+                document.getElementById('last-ping').innerText = `Ping: ${result.current_ping}ms | Sync: ${result.time}`;
+
+                // Update Accuracy Numbers & Progress Bar Widths
+                document.getElementById('acc-vision-val').innerText = result.vision_acc + "%";
+                document.getElementById('acc-vision-val').parentElement.nextElementSibling.firstElementChild.style.width = result.vision_acc + "%";
+
+                document.getElementById('acc-crop-val').innerText = result.crop_acc + "%";
+                document.getElementById('acc-crop-val').parentElement.nextElementSibling.firstElementChild.style.width = result.crop_acc + "%";
+
+                document.getElementById('acc-suit-val').innerText = result.suit_acc + "%";
+                document.getElementById('acc-suit-val').parentElement.nextElementSibling.firstElementChild.style.width = result.suit_acc + "%";
+
+                // Animate Chart
+                window.latencyChart.data.datasets[0].data = result.latency_data;
+                window.latencyChart.update();
+            }
+        } catch (error) {
+            console.error("Telemetry Sync Failed:", error);
+        }
+    }
+
+    // Trigger the initial fetch immediately, then loop every 5 seconds (5000ms)
+    fetchLiveHealthMetrics();
+    setInterval(fetchLiveHealthMetrics, 5000);
+
+    // 3. The Retraining API Trigger
+    document.getElementById('btn-trigger-training').addEventListener('click', async function() {
+        const btn = this;
+        const originalHtml = btn.innerHTML;
+        const logBox = document.getElementById('terminal-log');
+        
+        // Enter Loading State
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Compiling model weights...';
+        btn.style.borderColor = 'var(--warning)';
+        btn.style.color = 'var(--warning)';
+        btn.disabled = true;
+
+        try {
+            // POST request to Django
+            const response = await fetch('/api/retrain-model/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+            });
+            
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                logBox.innerHTML += `<div class="log-entry"><span class="log-time">[${result.time}]</span> [ML] ${result.log_message} <span class="log-status ok">SUCCESS</span></div>`;
+            } else {
+                logBox.innerHTML += `<div class="log-entry"><span class="log-time">[ERR]</span> [SYS] Failed to dispatch GPU job.</div>`;
+            }
+        } catch (error) {
+            logBox.innerHTML += `<div class="log-entry"><span class="log-time">[ERR]</span> [NET] Connection to ML node lost.</div>`;
+        } finally {
+            // Scroll log to bottom and reset button
+            logBox.scrollTop = logBox.scrollHeight;
+            btn.innerHTML = originalHtml;
+            btn.style.borderColor = 'var(--border)';
+            btn.style.color = 'var(--text)';
+            btn.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>

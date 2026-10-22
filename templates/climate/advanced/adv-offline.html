@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Offline Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --danger: #e74c3c; --warning: #f1c40f; --info: #3498db;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 24px; overflow-x: hidden; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 950px) { .layout-grid { grid-template-columns: 1fr 1.3fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); height: fit-content; }
+
+        /* Status & Storage UI */
+        .status-banner { display: flex; align-items: center; justify-content: space-between; padding: 25px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 20px; margin-bottom: 25px; }
+        .conn-indicator { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 16px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+        .dot-offline { background: var(--warning); box-shadow: 0 0 10px var(--warning); }
+        .dot-online { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+        
+        .storage-box { text-align: center; margin-bottom: 20px; }
+        .storage-val { font-size: 36px; font-weight: 800; color: var(--text); margin-top: 10px; }
+        .storage-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+        .btn-action { 
+            width: 100%; background: transparent; border: 1px solid var(--border); color: var(--text); 
+            padding: 16px; border-radius: 14px; font-weight: 600; cursor: pointer; transition: 0.3s; margin-top: 10px; font-family: inherit;
+        }
+        .btn-action:hover { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); color: var(--primary); }
+        
+        .btn-sync { background: linear-gradient(90deg, var(--primary), #5a44ff); border: none; color: white; }
+        .btn-sync:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(123, 97, 255, 0.25); border-color: transparent; background: linear-gradient(90deg, var(--primary), #5a44ff); color: white; }
+
+        /* Sync Queue List */
+        .queue-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
+        .queue-count { background: rgba(123, 97, 255, 0.1); color: var(--primary); padding: 5px 12px; border-radius: 12px; font-size: 12px; font-weight: 700; }
+
+        .queue-list { max-height: 350px; overflow-y: auto; padding-right: 5px; }
+        .queue-item { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 12px; }
+        .queue-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; color: var(--muted); margin-right: 15px; }
+        .queue-info { flex: 1; }
+        .queue-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+        .queue-meta { font-size: 11px; color: var(--muted); }
+        .queue-status { font-size: 11px; font-weight: 600; color: var(--warning); text-transform: uppercase; display: flex; align-items: center; gap: 5px; }
+
+        .chart-container { height: 180px; width: 100%; position: relative; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/advanced/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Advanced Hub</a>
+            <h1 style="margin:0; font-size: 28px; font-weight: 600;">Offline Mode Manager</h1>
+        </div>
+        <div style="text-align: right;">
+            <div id="sw-status" style="font-size: 12px; color: var(--primary);"><i class="fa-solid fa-microchip"></i> Service Worker Active</div>
+            <div id="last-sync-time" style="font-size: 14px; color: var(--muted); margin-top: 5px;">Last Sync: --:--</div>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-wifi" style="color:var(--primary); margin-right: 10px;"></i> Network Engine</h3>
+            
+            <div class="status-banner">
+                <div class="conn-indicator" id="conn-state">
+                    <span class="dot dot-offline" id="conn-dot"></span> <span id="conn-text">Syncing Status...</span>
+                </div>
+                <div style="font-size: 11px; color: var(--muted); text-transform: uppercase;">Uplink</div>
+            </div>
+
+            <div class="storage-box">
+                <div class="storage-label">Local Device Storage Used</div>
+                <div class="storage-val" id="storage-used-val">-- MB</div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="storageChart"></canvas>
+            </div>
+
+            <button class="btn-action" id="btn-clear-cache" style="margin-top: 25px;"><i class="fa-solid fa-broom"></i> Clear Local Cache</button>
+        </div>
+
+        <div class="glass-panel">
+            <div class="queue-header">
+                <h3 style="margin:0; font-weight: 600;"><i class="fa-solid fa-cloud-arrow-up" style="color:var(--accent); margin-right: 10px;"></i> Pending Upload Queue</h3>
+                <div class="queue-count" id="queue-count-val">0 Items</div>
+            </div>
+            
+            <div class="queue-list" id="sync-queue-container">
+                <div class="queue-item" id="queue-skeleton-1">
+                    <div class="queue-icon"><i class="fa-solid fa-spinner fa-spin"></i></div>
+                    <div class="queue-info">
+                        <div class="queue-title" id="q-title-1">Scanning Local DB...</div>
+                        <div class="queue-meta" id="q-meta-1">Awaiting data fetch</div>
+                    </div>
+                    <div class="queue-status" id="q-status-1"><i class="fa-solid fa-clock"></i> Pending</div>
+                </div>
+            </div>
+
+            <button class="btn-action btn-sync" id="btn-force-sync" style="margin-top: 25px;"><i class="fa-solid fa-rotate"></i> Force Cloud Sync</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Initialize Local Storage Chart
+    const ctx = document.getElementById('storageChart').getContext('2d');
+    let usedDataPercent = 35; // Starts at 35% full
+    
+    let storageChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Used Data', 'Available Free Space'],
+            datasets: [{
+                data: [usedDataPercent, 100 - usedDataPercent], 
+                backgroundColor: ['#7b61ff', 'rgba(255,255,255,0.05)'],
+                borderWidth: 0,
+                cutout: '80%'
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            }
+        }
+    });
+
+    // 2. Simulated Offline Queue Data
+    let pendingQueue = [
+        { id: 1, title: 'Field Crop Log (Maize)', meta: 'Saved 2 hours ago • 45 KB', status: 'Pending' },
+        { id: 2, title: 'Soil PH Reading', meta: 'Saved 5 hours ago • 12 KB', status: 'Pending' },
+        { id: 3, title: 'Harvest Expense', meta: 'Saved 1 day ago • 5 KB', status: 'Pending' }
+    ];
+
+    function renderQueue() {
+        const container = document.getElementById('sync-queue-container');
+        const countVal = document.getElementById('queue-count-val');
+        
+        container.innerHTML = ''; 
+        
+        if (pendingQueue.length === 0) {
+            countVal.innerText = '0 Tasks';
+            container.innerHTML = '<div style="padding: 30px; text-align: center; color: var(--muted); font-size: 13px;">Queue is empty. All local data is backed up to the cloud.</div>';
+            return;
+        }
+
+        countVal.innerText = `${pendingQueue.length} Tasks`;
+
+        pendingQueue.forEach((item, index) => {
+            const row = document.createElement('div');
+            row.className = 'queue-item';
+            row.style.marginBottom = '15px';
+            row.style.padding = '15px';
+            row.style.background = 'rgba(255,255,255,0.02)';
+            row.style.border = '1px solid var(--border)';
+            row.style.borderRadius = '12px';
+            row.style.display = 'flex';
+            row.style.justifyContent = 'space-between';
+            row.style.alignItems = 'center';
+
+            row.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="background: rgba(123, 97, 255, 0.1); color: var(--primary); padding: 12px; border-radius: 10px;">
+                        <i class="fa-solid fa-file-lines"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 14px;">${item.title}</div>
+                        <div style="font-size: 11px; color: var(--muted);">${item.meta}</div>
+                    </div>
+                </div>
+                <div id="q-status-${item.id}" style="font-size: 12px; font-weight: 600; color: var(--warning);">
+                    <i class="fa-solid fa-clock"></i> ${item.status}
+                </div>
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    // Set initial values
+    document.getElementById('storage-used-val').innerText = '14.2 MB';
+    document.getElementById('last-sync-time').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    renderQueue();
+
+    // 3. Real-Time Network Status Monitoring
+    function updateNetworkStatus() {
+        const dot = document.getElementById('conn-dot');
+        const text = document.getElementById('conn-text');
+        
+        if (navigator.onLine) {
+            dot.style.backgroundColor = 'var(--accent)';
+            dot.style.boxShadow = '0 0 10px var(--accent)';
+            text.innerText = 'Connected (Online)';
+        } else {
+            dot.style.backgroundColor = 'var(--danger)';
+            dot.style.boxShadow = '0 0 10px var(--danger)';
+            text.innerText = 'Disconnected (Offline Mode)';
+        }
+    }
+    
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
+    updateNetworkStatus(); 
+
+    // 4. Connect "Force Sync" to Django API
+    document.getElementById('btn-force-sync').addEventListener('click', async () => {
+        if (!navigator.onLine) {
+            alert("Cannot sync while offline. Please connect to Wi-Fi or Cellular Data.");
+            return;
+        }
+        
+        if (pendingQueue.length === 0) return; // Nothing to sync
+
+        const btn = document.getElementById('btn-force-sync');
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing to Cloud...';
+        btn.style.opacity = '0.7';
+        btn.style.pointerEvents = 'none';
+
+        try {
+            // Send the queue data to your Django Backend
+            const response = await fetch('/api/sync-offline/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: pendingQueue })
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                // UI Animation: Loop through queue and mark as done
+                for (let i = 0; i < pendingQueue.length; i++) {
+                    const statusEl = document.getElementById(`q-status-${pendingQueue[i].id}`);
+                    if (statusEl) {
+                        statusEl.innerHTML = '<i class="fa-solid fa-check"></i> Done';
+                        statusEl.style.color = 'var(--accent)';
+                    }
+                    await new Promise(r => setTimeout(r, 400)); // Staggered animation
+                }
+                
+                // Clear the queue completely
+                setTimeout(() => {
+                    pendingQueue = [];
+                    renderQueue();
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> Sync Complete';
+                    document.getElementById('last-sync-time').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    // Drop storage text and chart to zero after upload
+                    document.getElementById('storage-used-val').innerText = '0.4 MB';
+                    storageChart.data.datasets[0].data = [2, 98]; 
+                    storageChart.update();
+
+                    setTimeout(() => {
+                        btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Force Cloud Sync';
+                        btn.style.opacity = '1';
+                        btn.style.pointerEvents = 'auto';
+                    }, 2500);
+                }, 800);
+            } else {
+                alert("Backend sync failed. Please try again.");
+            }
+        } catch (error) {
+            console.error("Network error during sync:", error);
+            alert("Could not reach the server.");
+            btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Force Cloud Sync';
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+        }
+    });
+    
+    // 5. Clear Cache Logic
+    document.getElementById('btn-clear-cache').addEventListener('click', () => {
+        if(confirm("Are you sure you want to clear local cache? Unsynced items (the queue) will NOT be deleted.")) {
+            document.getElementById('storage-used-val').innerText = '0.4 MB';
+            storageChart.data.datasets[0].data = [2, 98]; 
+            storageChart.update();
+            
+            const btn = document.getElementById('btn-clear-cache');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Cache Cleared';
+            setTimeout(() => { btn.innerHTML = orig; }, 2000);
+        }
+    });
+</script>
+</body>
+</html>
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Offline Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --danger: #e74c3c; --warning: #f1c40f; --info: #3498db;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 24px; overflow-x: hidden; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 950px) { .layout-grid { grid-template-columns: 1fr 1.3fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); height: fit-content; }
+
+        /* Status & Storage UI */
+        .status-banner { display: flex; align-items: center; justify-content: space-between; padding: 25px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 20px; margin-bottom: 25px; }
+        .conn-indicator { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 16px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+        .dot-offline { background: var(--warning); box-shadow: 0 0 10px var(--warning); }
+        .dot-online { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+        
+        .storage-box { text-align: center; margin-bottom: 20px; }
+        .storage-val { font-size: 36px; font-weight: 800; color: var(--text); margin-top: 10px; }
+        .storage-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+        .btn-action { 
+            width: 100%; background: transparent; border: 1px solid var(--border); color: var(--text); 
+            padding: 16px; border-radius: 14px; font-weight: 600; cursor: pointer; transition: 0.3s; margin-top: 10px; font-family: inherit;
+        }
+        .btn-action:hover { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); color: var(--primary); }
+        
+        .btn-sync { background: linear-gradient(90deg, var(--primary), #5a44ff); border: none; color: white; }
+        .btn-sync:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(123, 97, 255, 0.25); border-color: transparent; background: linear-gradient(90deg, var(--primary), #5a44ff); color: white; }
+
+        /* Sync Queue List */
+        .queue-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
+        .queue-count { background: rgba(123, 97, 255, 0.1); color: var(--primary); padding: 5px 12px; border-radius: 12px; font-size: 12px; font-weight: 700; }
+
+        .queue-list { max-height: 350px; overflow-y: auto; padding-right: 5px; }
+        .queue-item { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 12px; }
+        .queue-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; color: var(--muted); margin-right: 15px; }
+        .queue-info { flex: 1; }
+        .queue-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+        .queue-meta { font-size: 11px; color: var(--muted); }
+        .queue-status { font-size: 11px; font-weight: 600; color: var(--warning); text-transform: uppercase; display: flex; align-items: center; gap: 5px; }
+
+        .chart-container { height: 180px; width: 100%; position: relative; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/advanced/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Advanced Hub</a>
+            <h1 style="margin:0; font-size: 28px; font-weight: 600;">Offline Mode Manager</h1>
+        </div>
+        <div style="text-align: right;">
+            <div id="sw-status" style="font-size: 12px; color: var(--primary);"><i class="fa-solid fa-microchip"></i> Service Worker Active</div>
+            <div id="last-sync-time" style="font-size: 14px; color: var(--muted); margin-top: 5px;">Last Sync: --:--</div>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-wifi" style="color:var(--primary); margin-right: 10px;"></i> Network Engine</h3>
+            
+            <div class="status-banner">
+                <div class="conn-indicator" id="conn-state">
+                    <span class="dot dot-offline" id="conn-dot"></span> <span id="conn-text">Syncing Status...</span>
+                </div>
+                <div style="font-size: 11px; color: var(--muted); text-transform: uppercase;">Uplink</div>
+            </div>
+
+            <div class="storage-box">
+                <div class="storage-label">Local Device Storage Used</div>
+                <div class="storage-val" id="storage-used-val">-- MB</div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="storageChart"></canvas>
+            </div>
+
+            <button class="btn-action" id="btn-clear-cache" style="margin-top: 25px;"><i class="fa-solid fa-broom"></i> Clear Local Cache</button>
+        </div>
+
+        <div class="glass-panel">
+            <div class="queue-header">
+                <h3 style="margin:0; font-weight: 600;"><i class="fa-solid fa-cloud-arrow-up" style="color:var(--accent); margin-right: 10px;"></i> Pending Upload Queue</h3>
+                <div class="queue-count" id="queue-count-val">0 Items</div>
+            </div>
+            
+            <div class="queue-list" id="sync-queue-container">
+                <div class="queue-item" id="queue-skeleton-1">
+                    <div class="queue-icon"><i class="fa-solid fa-spinner fa-spin"></i></div>
+                    <div class="queue-info">
+                        <div class="queue-title" id="q-title-1">Scanning Local DB...</div>
+                        <div class="queue-meta" id="q-meta-1">Awaiting data fetch</div>
+                    </div>
+                    <div class="queue-status" id="q-status-1"><i class="fa-solid fa-clock"></i> Pending</div>
+                </div>
+            </div>
+
+            <button class="btn-action btn-sync" id="btn-force-sync" style="margin-top: 25px;"><i class="fa-solid fa-rotate"></i> Force Cloud Sync</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // BACKEND DEVELOPER INTERFACE
+    // Target IDs: conn-dot, conn-text, storage-used-val, queue-count-val, sync-queue-container
+    // Button IDs: btn-clear-cache, btn-force-sync
+
+    // Local Storage Doughnut Chart (Zeroed out)
+    const ctx = document.getElementById('storageChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Used Data', 'Available Free Space'],
+            datasets: [{
+                data: [0, 100], // Backend: Inject actual storage ratio here
+                backgroundColor: ['#7b61ff', 'rgba(255,255,255,0.05)'],
+                borderWidth: 0,
+                cutout: '80%'
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            }
+        }
+    });
+
+    // Simulated Frontend Event Listeners
+    document.getElementById('btn-force-sync').addEventListener('click', () => {
+        console.log("Sync triggered. Backend should loop through IndexedDB queue and push to main database API.");
+    });
+    
+    document.getElementById('btn-clear-cache').addEventListener('click', () => {
+        console.log("Clear cache triggered. Backend should wipe non-essential local storage blocks.");
+    });
+</script>
+
+</body>
+</html> -->

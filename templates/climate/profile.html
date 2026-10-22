@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Create Profile</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>
+body{background:#0b0b0e;color:#fff;font-family:Poppins;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;}
+.box{background:#111;padding:30px 40px;border-radius:18px;width:90%;max-width:500px;}
+h2{text-align:center;margin-bottom:20px;}
+input,select,button{width:100%;padding:14px;border-radius:14px;border:none;margin-top:12px;}
+input,select{background:#1c1c22;color:#fff;}
+button{background:#7b61ff;color:#fff;font-weight:600;cursor:pointer;}
+.lang-toggle{text-align:center;margin-bottom:15px;}
+.lang-toggle button{width:auto;padding:6px 12px;margin:0 5px;border-radius:8px;border:none;font-weight:600;background:#333;color:#fff;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="box">
+<div class="lang-toggle">
+  <button onclick="setLang('en')">English</button>
+  <button onclick="setLang('ha')">Hausa</button>
+</div>
+
+<h2 id="title">Complete Your Profile</h2>
+
+<input id="fullName" placeholder="Full Name">
+<input id="farmName" placeholder="Farm Name">
+
+<select id="country">
+  <option value="">Select Country</option>
+  <option value="Nigeria">Nigeria</option>
+</select>
+
+<select id="state">
+  <option value="">Select State</option>
+</select>
+
+<select id="lga">
+  <option value="">Select Local Government</option>
+</select>
+
+<select id="crop">
+  <option value="">Select Main Crop</option>
+</select>
+
+<input id="farmSize" placeholder="Farm Size (in hectares)">
+<button onclick="finish()">Continue</button>
+</div>
+
+<script>
+// Language text
+let lang = 'en';
+const texts = {
+  en: {
+    title: "Complete Your Profile",
+    fullName: "Full Name",
+    farmName: "Farm Name",
+    country: "Select Country",
+    state: "Select State",
+    lga: "Select Local Government",
+    crop: "Select Main Crop",
+    farmSize: "Farm Size (in hectares)",
+    button: "Continue",
+    alertFill: "Please fill your "
+  },
+  ha: {
+    title: "Cikakken Bayanin Farko",
+    fullName: "Cikakken Suna",
+    farmName: "Sunan Gona",
+    country: "Zaɓi Ƙasa",
+    state: "Zaɓi Jihar",
+    lga: "Zaɓi Gundumar",
+    crop: "Zaɓi Babban Amfanin gona",
+    farmSize: "Girman Gona (hektar)",
+    button: "Ci gaba",
+    alertFill: "Don Allah cika "
+  }
+};
+
+// Crop lists
+const crops = {
+  en: ["Maize","Rice","Cassava","Tomato","Vegetables","Yam","Sorghum"],
+  ha: ["Masara","Shinkafa","Kankana","Tumatir","Kayan lambu","Doya","Sorhum"]
+};
+
+// Load all Nigerian states and LGAs from external JSON
+let nigeriaLGAs = {};
+
+async function loadLGAs() {
+  try {
+    const response = await fetch('nigeria_lgas.json'); // must be in same folder
+    nigeriaLGAs = await response.json();
+
+    // Populate states once loaded
+    const stateSelect = document.getElementById('state');
+    stateSelect.innerHTML = `<option value="">${texts[lang].state}</option>`;
+    Object.keys(nigeriaLGAs).forEach(state => {
+      stateSelect.innerHTML += `<option value="${state}">${state}</option>`;
+    });
+  } catch (e) {
+    console.error("Error loading LGAs:", e);
+  }
+}
+
+// Populate LGAs when state changes
+document.getElementById('state').addEventListener('change', function(){
+  const lgaSelect = document.getElementById('lga');
+  lgaSelect.innerHTML = `<option value="">${texts[lang].lga}</option>`;
+  const lgas = nigeriaLGAs[this.value] || [];
+  lgas.forEach(lga => {
+    lgaSelect.innerHTML += `<option value="${lga}">${lga}</option>`;
+  });
+});
+
+// Set crop options based on language
+function populateCrops(){
+  const cropSelect = document.getElementById('crop');
+  cropSelect.innerHTML = `<option value="">${texts[lang].crop}</option>`;
+  crops[lang].forEach(c => {
+    cropSelect.innerHTML += `<option value="${c}">${c}</option>`;
+  });
+}
+
+// Change language
+function setLang(l) {
+  lang = l;
+  document.getElementById('title').innerText = texts[lang].title;
+  document.getElementById('fullName').placeholder = texts[lang].fullName;
+  document.getElementById('farmName').placeholder = texts[lang].farmName;
+  document.getElementById('country').options[0].text = texts[lang].country;
+  document.getElementById('state').options[0].text = texts[lang].state;
+  document.getElementById('lga').options[0].text = texts[lang].lga;
+  document.getElementById('farmSize').placeholder = texts[lang].farmSize;
+  document.querySelector('button').innerText = texts[lang].button;
+  populateCrops();
+}
+
+// Save to localStorage
+function finish(){
+  const profile = {
+    fullName: document.getElementById('fullName').value,
+    farmName: document.getElementById('farmName').value,
+    country: document.getElementById('country').value,
+    state: document.getElementById('state').value,
+    lga: document.getElementById('lga').value,
+    crop: document.getElementById('crop').value,
+    farmSize: document.getElementById('farmSize').value
+  };
+  for(const key in profile){
+    if(!profile[key]){
+      alert(texts[lang].alertFill + key);
+      return;
+    }
+  }
+  localStorage.setItem('profile', JSON.stringify(profile));
+  alert(lang==='en' ? "Profile saved successfully!" : "An adana bayaninka cikin nasara!");
+  window.location="dashboard.html";
+}
+
+// Initialize
+setLang('en');
+loadLGAs();
+
+</script>
+</body>
+</html>

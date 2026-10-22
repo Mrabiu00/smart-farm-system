@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | AI Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+            --user-msg: rgba(123, 97, 255, 0.15); --ai-msg: rgba(255, 255, 255, 0.03);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 20px; min-height: 100vh; display: flex; flex-direction: column; box-sizing: border-box; }
+        .container { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; flex: 1; }
+        
+        .header-box { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 5px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        /* Responsive Layout */
+        .chat-wrapper { display: flex; flex-direction: column; gap: 20px; flex: 1; }
+        @media (min-width: 900px) { .chat-wrapper { flex-direction: row; height: calc(100vh - 120px); } }
+        
+        /* Sidebar / Settings Area */
+        .chat-sidebar { 
+            background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 20px; 
+            display: grid; grid-template-columns: 1fr; gap: 15px; align-items: end;
+        }
+        @media (min-width: 600px) { .chat-sidebar { grid-template-columns: 1fr 1fr auto; } }
+        @media (min-width: 900px) { .chat-sidebar { display: flex; flex-direction: column; width: 280px; height: 100%; } }
+
+        .setting-group { width: 100%; }
+        .setting-group label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+        .setting-select { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 14px; border-radius: 12px; color: white; outline: none; font-family: inherit; font-size: 13px; }
+        .setting-select:focus { border-color: var(--primary); }
+
+        .clear-chat-btn { width: 100%; background: transparent; border: 1px solid rgba(231, 76, 60, 0.3); color: #e74c3c; padding: 14px; border-radius: 12px; cursor: pointer; transition: 0.3s; font-family: inherit; font-weight: 500; font-size: 13px; }
+        .clear-chat-btn:hover { background: rgba(231, 76, 60, 0.1); }
+        @media (min-width: 900px) { .clear-chat-btn { margin-top: auto; } }
+
+        /* Chat Area */
+        .chat-main { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; min-height: 500px; }
+        
+        .chat-history { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* Message Bubbles */
+        .msg-row { display: flex; width: 100%; }
+        .msg-row.user { justify-content: flex-end; }
+        .msg-row.ai { justify-content: flex-start; }
+
+        .msg-bubble { max-width: 85%; padding: 16px 20px; border-radius: 18px; font-size: 14px; line-height: 1.6; position: relative; word-wrap: break-word; }
+        @media (min-width: 600px) { .msg-bubble { max-width: 75%; } }
+        
+        .user .msg-bubble { background: var(--user-msg); border: 1px solid rgba(123, 97, 255, 0.3); border-bottom-right-radius: 4px; color: #fff; }
+        .ai .msg-bubble { background: var(--ai-msg); border: 1px solid var(--border); border-bottom-left-radius: 4px; color: #e2e2e2; }
+
+        .msg-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0; }
+        .ai .msg-icon { background: rgba(46, 204, 113, 0.1); color: var(--accent); border: 1px solid rgba(46, 204, 113, 0.3); }
+
+        /* Input Area with Upload Icon */
+        .chat-input-area { padding: 15px; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border); display: flex; gap: 10px; align-items: center; }
+        .chat-input { flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 16px; border-radius: 16px; color: white; outline: none; font-family: inherit; font-size: 14px; transition: 0.3s; }
+        .chat-input:focus { border-color: var(--primary); background: rgba(123, 97, 255, 0.05); }
+        
+        .btn-action { width: 45px; height: 45px; border-radius: 14px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; font-size: 18px; flex-shrink: 0; }
+        .btn-upload { background: rgba(255,255,255,0.05); color: var(--muted); }
+        .btn-upload:hover { background: rgba(255,255,255,0.1); color: white; }
+        .btn-send { background: var(--primary); color: white; }
+        .btn-send:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(123, 97, 255, 0.3); }
+
+        /* Typing Indicator */
+        .typing-indicator { display: none; align-items: center; gap: 5px; padding: 15px 20px; background: var(--ai-msg); border-radius: 18px; border-bottom-left-radius: 4px; width: fit-content; border: 1px solid var(--border); margin: 0 20px 20px; }
+        .dot { width: 6px; height: 6px; background: var(--muted); border-radius: 50%; animation: blink 1.4s infinite both; }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink { 0% { opacity: 0.2; } 20% { opacity: 1; } 100% { opacity: 0.2; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/ai/image-main/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to AI Hub</a>
+            <h1 style="margin:0; font-size: 24px; font-weight: 600;"><i class="fa-solid fa-robot" style="color:var(--accent); margin-right:8px;"></i> AI Assistant</h1>
+        </div>
+        <div style="text-align: right; display: none; /* Hidden on very small screens */">
+            <div style="font-size: 12px; color: var(--accent);"><i class="fa-solid fa-link"></i> Backend Ready</div>
+        </div>
+    </div>
+
+    <div class="chat-wrapper">
+        <div class="chat-sidebar">
+            <div class="setting-group">
+                <label>Active Expertise</label>
+                <select class="setting-select" id="ai-persona">
+                    <option value="General Agronomist">General Agronomist</option>
+                    <option value="Pest Specialist">Pest & Disease Expert</option>
+                    <option value="Financial Forecaster">Financial Forecaster</option>
+                    <option value="Soil Chemist">Soil Chemist</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label>Detail Level</label>
+                <select class="setting-select" id="ai-length">
+                    <option value="Concise">Concise & Direct</option>
+                    <option value="Detailed">Detailed Analysis</option>
+                </select>
+            </div>
+
+            <button class="clear-chat-btn" id="btn-clear"><i class="fa-solid fa-trash-can"></i> Clear Chat</button>
+        </div>
+
+        <div class="chat-main">
+            <div class="chat-history" id="chat-box">
+                <div class="msg-row ai">
+                    <div class="msg-icon"><i class="fa-solid fa-seedling"></i></div>
+                    <div class="msg-bubble">
+                        Hello! I am your SmartFarm AI. Select an area of expertise above, and ask me any questions about your crops, soil, or farm operations.
+                    </div>
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="typing-indicator">
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+
+            <div class="chat-input-area">
+                <input type="file" id="file-upload" style="display: none;">
+                
+                <button class="btn-action btn-upload" title="Upload Image or File" onclick="document.getElementById('file-upload').click();">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                </button>
+                
+                <input type="text" class="chat-input" id="user-input" placeholder="Type your question here..." autocomplete="off">
+                <button class="btn-action btn-send" id="btn-send"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const chatBox = document.getElementById('chat-box');
+    const userInput = document.getElementById('user-input');
+    const btnSend = document.getElementById('btn-send');
+    const typingIndicator = document.getElementById('typing-indicator');
+    const personaSelect = document.getElementById('ai-persona');
+    const lengthSelect = document.getElementById('ai-length');
+    const fileUpload = document.getElementById('file-upload');
+    
+    // NEW: Variable to hold the converted image data
+    let currentBase64Image = null;
+
+    function appendMessage(sender, text) {
+        const row = document.createElement('div');
+        row.className = `msg-row ${sender}`;
+        
+        let iconHtml = '';
+        if (sender === 'ai') {
+            iconHtml = `<div class="msg-icon"><i class="fa-solid fa-robot"></i></div>`;
+        }
+
+        row.innerHTML = `
+            ${iconHtml}
+            <div class="msg-bubble">${text}</div>
+        `;
+        chatBox.appendChild(row);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // NEW: Handle File Selection and convert to Base64
+    fileUpload.addEventListener('change', function() {
+        if(this.files && this.files.length > 0) {
+            const file = this.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                currentBase64Image = e.target.result; 
+                appendMessage('user', `<i class="fa-solid fa-image" style="color: #2ecc71;"></i> Attached Image: ${file.name}`);
+            };
+            
+            reader.readAsDataURL(file);
+        }
+    });
+
+    function sendMessage() {
+        const text = userInput.value.trim();
+        // Allow sending if there is either text OR an image attached
+        if (!text && !currentBase64Image) return;
+
+        if (text) {
+            appendMessage('user', text);
+        }
+        userInput.value = '';
+
+        typingIndicator.style.display = 'flex';
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        fetch('/ai/chat/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                'message': text,
+                'persona': personaSelect.value,
+                'length': lengthSelect.value,
+                'image': currentBase64Image // NEW: Sending the image to Django
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            typingIndicator.style.display = 'none';
+            
+            if(data.status === 'success') {
+                appendMessage('ai', data.reply);
+            } else {
+                appendMessage('ai', 'Error: ' + data.reply);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            typingIndicator.style.display = 'none';
+            appendMessage('ai', 'Network error. Please make sure your Django server is running.');
+        });
+
+        // NEW: Clear the image from memory after sending
+        currentBase64Image = null;
+        fileUpload.value = "";
+    }
+
+    btnSend.addEventListener('click', sendMessage);
+    userInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') sendMessage();
+    });
+
+    document.getElementById('btn-clear').addEventListener('click', () => {
+        chatBox.innerHTML = '';
+        appendMessage('ai', 'Chat context cleared. Ready for a new topic.');
+        currentBase64Image = null;
+        fileUpload.value = "";
+    });
+</script>
+
+</body>
+</html>

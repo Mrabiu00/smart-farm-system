@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Task Automation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+            --gap: 25px; /* Define a consistent gap variable */
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 20px; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .header-section { margin-bottom: 40px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
+
+        /* Professional Grid with distinct gaps to prevent merging */
+        .automation-grid { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: var(--gap); /* Use the variable for spacing */
+            margin-top: 20px;
+        }
+
+        /* Desktop: 2 columns */
+        @media (min-width: 850px) { 
+            .automation-grid { grid-template-columns: repeat(2, 1fr); } 
+        }
+
+        .panel-link { text-decoration: none; color: inherit; display: block; height: 100%; }
+        
+        .task-card {
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            border-radius: 24px;
+            padding: 30px; 
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative; 
+            overflow: hidden; 
+            height: 100%;
+            box-sizing: border-box; /* Ensures padding doesn't break the layout */
+        }
+
+        .panel-link:hover .task-card { 
+            transform: translateY(-8px); 
+            border-color: var(--primary); 
+            box-shadow: 0 15px 35px rgba(123, 97, 255, 0.12); 
+        }
+
+        .icon-box { 
+            width: 50px; height: 50px; 
+            background: rgba(123, 97, 255, 0.1); 
+            border-radius: 14px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin-bottom: 20px; 
+        }
+        .icon-box i { color: var(--primary); font-size: 22px; }
+
+        .status-pill { 
+            font-size: 10px; padding: 4px 12px; 
+            border-radius: 20px; background: rgba(255,255,255,0.05); 
+            color: var(--muted); float: right; 
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-section">
+        <a href="/dashboard/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Return to Hub</a>
+        <h1 style="font-size: 28px; margin: 0;">Smart Task Automation</h1>
+        <p style="color: var(--muted); font-size: 14px; margin-top: 10px;">Sector 2: Manage automated schedules and custom farm activities.</p>
+    </div>
+
+    <div class="automation-grid">
+        <a href="/automation/planting-detail/" class="panel-link">
+            <div class="task-card">
+                <span class="status-pill">ID: plant_sync</span>
+                <div class="icon-box"><i class="fa-solid fa-seedling"></i></div>
+                <h3 style="margin: 0 0 10px;">Planting Schedule</h3>
+                <p style="color: var(--muted); font-size: 13px;">Auto-generated planting dates based on soil and weather sync.</p>
+            </div>
+        </a>
+
+        <a href="/automation/irrigation-detail/" class="panel-link">
+            <div class="task-card">
+                <span class="status-pill">ID: water_fert_logic</span>
+                <div class="icon-box"><i class="fa-solid fa-faucet-drip"></i></div>
+                <h3 style="margin: 0 0 10px;">Fertilizer & Irrigation</h3>
+                <p style="color: var(--muted); font-size: 13px;">Smart reminders for water needs and fertilizer application cycles.</p>
+            </div>
+        </a>
+
+        <a href="/automation/pest-detail/" class="panel-link">
+            <div class="task-card">
+                <span class="status-pill">ID: pest_alert</span>
+                <div class="icon-box"><i class="fa-solid fa-bug-slash"></i></div>
+                <h3 style="margin: 0 0 10px;">Pest Prevention Alerts</h3>
+                <p style="color: var(--muted); font-size: 13px;">Predictive warnings for pest outbreaks based on humidity trends.</p>
+            </div>
+        </a>
+
+        <a href="/automation/harvest-detail/" class="panel-link">
+            <div class="task-card">
+                <span class="status-pill">ID: harvest_timer</span>
+                <div class="icon-box"><i class="fa-solid fa-wheat-awn"></i></div>
+                <h3 style="margin: 0 0 10px;">Harvest Reminders</h3>
+                <p style="color: var(--muted); font-size: 13px;">Counting down to optimal harvest time for maximum yield quality.</p>
+            </div>
+        </a>
+
+        <a href="/automation/custom-task/" class="panel-link">
+            <div class="task-card" style="border-style: dashed; background: rgba(123, 97, 255, 0.02);">
+                <span class="status-pill">ID: custom_task_db</span>
+                <div class="icon-box" style="background: rgba(46, 204, 113, 0.1);"><i class="fa-solid fa-plus-circle" style="color: var(--accent);"></i></div>
+                <h3 style="margin: 0 0 10px;">Custom Task Creator</h3>
+                <p style="color: var(--muted); font-size: 13px;">Manually create and schedule specific farm maintenance activities.</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>

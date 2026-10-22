@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm | Soil Analyzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #07070a; --card: #12121a; --primary: #7b61ff; --accent: #2ecc71;
+            --warning: #f1c40f; --danger: #e74c3c;
+            --text: #ffffff; --muted: #8b8b9a; --border: rgba(255, 255, 255, 0.06);
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 40px 24px; overflow-x: hidden; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .header-box { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 950px) { .layout-grid { grid-template-columns: 1fr 1.3fr; } }
+
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); height: fit-content; }
+
+        /* Input Controls */
+        .input-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 15px 20px; border-radius: 16px; border: 1px solid var(--border); }
+        .input-label { font-size: 13px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 10px; width: 40%; }
+        .input-field { 
+            width: 80px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); 
+            padding: 10px; border-radius: 8px; color: white; text-align: right; outline: none; font-family: inherit; transition: 0.3s;
+        }
+        .input-field:focus { border-color: var(--primary); }
+        .unit-text { font-size: 11px; color: var(--muted); margin-left: 8px; width: 30px; }
+
+        .btn-analyze { 
+            width: 100%; background: linear-gradient(90deg, var(--primary), #5a44ff); color: white; border: none; 
+            padding: 18px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 10px;
+        }
+        .btn-analyze:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(123, 97, 255, 0.25); }
+
+        /* Output Diagnostics */
+        .health-score-box { display: flex; align-items: center; gap: 25px; padding: 25px; background: rgba(46, 204, 113, 0.05); border: 1px solid rgba(46, 204, 113, 0.2); border-radius: 20px; margin-bottom: 25px; }
+        .score-circle { width: 80px; height: 80px; border-radius: 50%; border: 4px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; color: var(--accent); flex-shrink: 0; }
+        
+        /* Prescription List */
+        .prescription-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 15px; border-left: 4px solid var(--primary); }
+        .presc-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .presc-nutrient { font-weight: 600; font-size: 14px; }
+        .presc-status { font-size: 11px; padding: 3px 10px; border-radius: 12px; font-weight: 600; text-transform: uppercase; }
+        .status-low { background: rgba(231, 76, 60, 0.1); color: var(--danger); }
+        .status-opt { background: rgba(46, 204, 113, 0.1); color: var(--accent); }
+        .presc-action { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+        .chart-container { height: 200px; width: 100%; margin-top: 30px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-box">
+        <div>
+            <a href="/ai/image-main/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to AI Hub</a>
+            <h1 style="margin:0; font-size: 28px; font-weight: 600;">Soil Fertility Analyzer</h1>
+        </div>
+        <div style="text-align: right;">
+            <div id="algo-status" style="font-size: 12px; color: var(--primary);"><i class="fa-solid fa-microchip"></i> Diagnostic Engine Active</div>
+            <div id="farm-zone-sync" style="font-size: 14px; color: var(--muted); margin-top: 5px;">Loading Sector Data...</div>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-vial" style="color:var(--primary); margin-right: 10px;"></i> Sample Data Entry</h3>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 25px;">Input lab results or synced sensor data for AI fertility processing.</p>
+            
+            <div class="input-row">
+                <div class="input-label"><i class="fa-solid fa-n" style="color: #3498db;"></i> Nitrogen (N)</div>
+                <div><input type="number" id="in-n-lvl" class="input-field" placeholder="0"><span class="unit-text">mg/kg</span></div>
+            </div>
+            
+            <div class="input-row">
+                <div class="input-label"><i class="fa-solid fa-p" style="color: var(--warning);"></i> Phosphorus (P)</div>
+                <div><input type="number" id="in-p-lvl" class="input-field" placeholder="0"><span class="unit-text">mg/kg</span></div>
+            </div>
+
+            <div class="input-row">
+                <div class="input-label"><i class="fa-solid fa-k" style="color: var(--danger);"></i> Potassium (K)</div>
+                <div><input type="number" id="in-k-lvl" class="input-field" placeholder="0"><span class="unit-text">mg/kg</span></div>
+            </div>
+
+            <div class="input-row">
+                <div class="input-label"><i class="fa-solid fa-droplet" style="color: var(--accent);"></i> Soil pH</div>
+                <div><input type="number" step="0.1" id="in-ph-lvl" class="input-field" placeholder="0.0"><span class="unit-text">pH</span></div>
+            </div>
+
+            <button class="btn-analyze" id="btn-run-fertility">Analyze Soil Health</button>
+        </div>
+
+        <div class="glass-panel">
+            <h3 style="margin-top:0; font-weight: 600;"><i class="fa-solid fa-file-prescription" style="color:var(--accent); margin-right: 10px;"></i> Mitigation Plan</h3>
+            
+            <div class="health-score-box">
+                <div class="score-circle" id="out-health-score">--</div>
+                <div>
+                    <div style="font-size: 12px; color: var(--accent); text-transform: uppercase; font-weight: 600; letter-spacing: 1px;">Overall Health Index</div>
+                    <div style="font-size: 18px; font-weight: 600; margin: 5px 0;" id="out-health-status">Awaiting Analysis</div>
+                    <div style="font-size: 12px; color: var(--muted);" id="out-health-desc">Submit chemical parameters to generate an index.</div>
+                </div>
+            </div>
+
+            <h4 style="font-size: 13px; color: var(--muted); margin-bottom: 15px; text-transform: uppercase;">Nutrient Prescriptions</h4>
+            
+            <div id="prescription-container">
+                <div class="prescription-card">
+                    <div class="presc-header">
+                        <span class="presc-nutrient" id="presc-title-1">Processing...</span>
+                        <span class="presc-status status-low" id="presc-status-1">--</span>
+                    </div>
+                    <div class="presc-action" id="presc-action-1">Awaiting data injection from backend algorithms.</div>
+                </div>
+
+                <div class="prescription-card" style="border-left-color: var(--warning);">
+                    <div class="presc-header">
+                        <span class="presc-nutrient" id="presc-title-2">Processing...</span>
+                        <span class="presc-status status-opt" id="presc-status-2">--</span>
+                    </div>
+                    <div class="presc-action" id="presc-action-2">Awaiting data injection from backend algorithms.</div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="npkBalanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Initialize the Bar Chart globally
+    const ctx = document.getElementById('npkBalanceChart').getContext('2d');
+    window.npkChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Nitrogen', 'Phosphorus', 'Potassium'],
+            datasets: [{
+                label: 'Current Level',
+                data: [0, 0, 0], 
+                backgroundColor: 'rgba(123, 97, 255, 0.6)',
+                borderRadius: 6
+            },
+            {
+                label: 'Optimal Target',
+                data: [0, 0, 0], 
+                backgroundColor: 'rgba(46, 204, 113, 0.3)',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { ticks: { color: '#8b8b9a', font: {size: 11} }, grid: { display: false } },
+                y: { display: false }
+            },
+            plugins: {
+                legend: { labels: { color: '#8b8b9a', font: {size: 11} } }
+            }
+        }
+    });
+
+    // 2. The AJAX Fetch Engine
+    document.getElementById('btn-run-fertility').addEventListener('click', async function() {
+        const btn = this;
+        const originalText = btn.innerText;
+
+        // Collect the 4 input vectors
+        const payload = {
+            n: document.getElementById('in-n-lvl').value,
+            p: document.getElementById('in-p-lvl').value,
+            k: document.getElementById('in-k-lvl').value,
+            ph: document.getElementById('in-ph-lvl').value
+        };
+
+        if (!payload.n || !payload.p || !payload.k || !payload.ph) {
+            alert("Please input all four chemical parameters.");
+            return;
+        }
+
+        // UI Loading State
+        btn.innerText = "Running Diagnostics...";
+        document.getElementById('algo-status').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+        document.getElementById('out-health-score').innerText = "--";
+
+        try {
+            const response = await fetch('/api/analyze-soil/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}' 
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                // Update Health Index Box
+                document.getElementById('out-health-score').innerText = result.health_score;
+                document.getElementById('out-health-status').innerText = result.health_status;
+                document.getElementById('out-health-desc').innerText = result.health_desc;
+                
+                // Set border color of the circle based on score
+                const circle = document.getElementById('out-health-score');
+                if(result.health_score >= 70) { circle.style.borderColor = '#2ecc71'; circle.style.color = '#2ecc71'; }
+                else if(result.health_score >= 40) { circle.style.borderColor = '#f1c40f'; circle.style.color = '#f1c40f'; }
+                else { circle.style.borderColor = '#e74c3c'; circle.style.color = '#e74c3c'; }
+
+                // Helper function to set status colors dynamically
+                const setPrescUI = (num, title, status, action) => {
+                    document.getElementById(`presc-title-${num}`).innerText = title;
+                    document.getElementById(`presc-action-${num}`).innerText = action;
+                    
+                    const statusBadge = document.getElementById(`presc-status-${num}`);
+                    statusBadge.innerText = status;
+                    statusBadge.className = 'presc-status'; // reset classes
+                    
+                    if(status === 'OPTIMAL') { statusBadge.classList.add('status-opt'); }
+                    else { statusBadge.classList.add('status-low'); } // fallback for LOW/CRITICAL
+                };
+
+                // Inject Prescriptions
+                setPrescUI(1, result.presc_title_1, result.presc_status_1, result.presc_action_1);
+                setPrescUI(2, result.presc_title_2, result.presc_status_2, result.presc_action_2);
+
+                // Animate the Bar Chart
+                window.npkChart.data.datasets[0].data = result.current_npk;
+                window.npkChart.data.datasets[1].data = result.target_npk;
+                window.npkChart.update();
+
+                document.getElementById('algo-status').innerHTML = '<i class="fa-solid fa-check-circle"></i> Diagnostics Complete';
+                document.getElementById('farm-zone-sync').innerText = "Prescription mapped to profile sector.";
+            } else {
+                console.error("Backend Error:", result.message);
+                document.getElementById('out-health-desc').innerText = "Error calculating diagnostics.";
+            }
+
+        } catch (error) {
+            console.error("Network Error:", error);
+            document.getElementById('out-health-desc').innerText = "Network connection failed.";
+        } finally {
+            btn.innerText = originalText;
+        }
+    });
+</script>
+
+</body>
+</html>
